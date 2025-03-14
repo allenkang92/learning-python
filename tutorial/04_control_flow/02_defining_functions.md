@@ -60,7 +60,7 @@ f()
 
 7. Important warning: The default value is evaluated only once. This makes a difference when the default is a mutable object such as a list, dictionary, or instances of most classes. For example, the following function accumulates the arguments passed to it on subsequent calls:
 
-중요 경고: 기본값은 한 번만 평가됩니다. 이는 기본값이 리스트, 사전 또는 대부분의 클래스의 인스턴스와 같은 가변 객체일 때 차이가 납니다. 예를 들어, 다음 함수는 후속 호출에서 전달된 인수를 누적합니다:
+중요 경고: 기본값은 한 번만 평가됩니다. 이는 기본값이 리스트, 딕셔너리 또는 대부분의 클래스의 인스턴스와 같은 가변 객체일 때 차이가 납니다. 예를 들어, 다음 함수는 후속 호출에서 전달된 인수를 누적합니다:
 
 ```python
 def f(a, L=[]):

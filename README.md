@@ -16,9 +16,3 @@
 10. [표준 라이브러리 둘러보기](./tutorial/10_stdlib_tour/)
 11. [표준 라이브러리 둘러보기 - Part II](./tutorial/11_stdlib_tour2/)
 12. [가상 환경 및 패키지](./tutorial/12_venv_packages/)
-
-## 학습 자료
-
-- [Python 공식 튜토리얼](https://docs.python.org/ko/3/tutorial/index.html)
-- [Python 표준 라이브러리](https://docs.python.org/ko/3/library/index.html)
-- [Python 언어 레퍼런스](https://docs.python.org/ko/3/reference/index.html)

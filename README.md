@@ -1,4 +1,4 @@
-# Python 학습 프로젝트
+# Learning Python
 
 ## 디렉터리 구조
 

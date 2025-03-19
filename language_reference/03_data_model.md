@@ -2738,3 +2738,337 @@ The specification, background, and examples for the Python with statement.
 참고
 PEP 343 - "with" 문
 Python with 문의 명세, 배경 및 예제입니다.
+
+### 3.3.10. Customizing positional arguments in class pattern matching
+
+### 3.3.10. 클래스 패턴 매칭에서 위치 인수 사용자 정의
+
+When using a class name in a pattern, positional arguments in the pattern are not allowed by default, i.e. case MyClass(x, y) is typically invalid without special support in MyClass. To be able to use that kind of pattern, the class needs to define a __match_args__ attribute.
+
+패턴에서 클래스 이름을 사용할 때, 패턴의 위치 인수는 기본적으로 허용되지 않습니다. 즉, MyClass에서 특별히 지원하지 않으면 case MyClass(x, y)는 일반적으로 유효하지 않습니다. 이러한 종류의 패턴을 사용하려면 클래스가 __match_args__ 속성을 정의해야 합니다.
+
+object.__match_args__
+This class variable can be assigned a tuple of strings. When this class is used in a class pattern with positional arguments, each positional argument will be converted into a keyword argument, using the corresponding value in __match_args__ as the keyword. The absence of this attribute is equivalent to setting it to ().
+
+object.__match_args__
+이 클래스 변수에는 문자열 튜플을 할당할 수 있습니다. 이 클래스가 위치 인수가 있는 클래스 패턴에서 사용될 때, 각 위치 인수는 __match_args__의 해당 값을 키워드로 사용하여 키워드 인수로 변환됩니다. 이 속성이 없는 것은 ()로 설정하는 것과 동일합니다.
+
+For example, if MyClass.__match_args__ is ("left", "center", "right") that means that case MyClass(x, y) is equivalent to case MyClass(left=x, center=y). Note that the number of arguments in the pattern must be smaller than or equal to the number of elements in __match_args__; if it is larger, the pattern match attempt will raise a TypeError.
+
+예를 들어, MyClass.__match_args__가 ("left", "center", "right")인 경우, case MyClass(x, y)는 case MyClass(left=x, center=y)와 동일합니다. 패턴의 인수 수는 __match_args__의 요소 수보다 작거나 같아야 합니다. 더 큰 경우 패턴 매치 시도는 TypeError를 발생시킵니다.
+
+Added in version 3.10.
+
+버전 3.10에서 추가됨.
+
+See also
+PEP 634 - Structural Pattern Matching
+The specification for the Python match statement.
+
+참고
+PEP 634 - 구조적 패턴 매칭
+Python match 문에 대한 명세.
+
+### 3.3.11. Emulating buffer types
+
+### 3.3.11. 버퍼 타입 에뮬레이션
+
+The buffer protocol provides a way for Python objects to expose efficient access to a low-level memory array. This protocol is implemented by builtin types such as bytes and memoryview, and third-party libraries may define additional buffer types.
+
+버퍼 프로토콜은 Python 객체가 저수준 메모리 배열에 효율적인 접근을 노출할 수 있는 방법을 제공합니다. 이 프로토콜은 bytes와 memoryview와 같은 내장 타입으로 구현되며, 서드파티 라이브러리는 추가 버퍼 타입을 정의할 수 있습니다.
+
+While buffer types are usually implemented in C, it is also possible to implement the protocol in Python.
+
+버퍼 타입은 일반적으로 C로 구현되지만, Python에서도 프로토콜을 구현하는 것이 가능합니다.
+
+object.__buffer__(self, flags)
+Called when a buffer is requested from self (for example, by the memoryview constructor). The flags argument is an integer representing the kind of buffer requested, affecting for example whether the returned buffer is read-only or writable. inspect.BufferFlags provides a convenient way to interpret the flags. The method must return a memoryview object.
+
+object.__buffer__(self, flags)
+self에서 버퍼가 요청될 때 호출됩니다(예: memoryview 생성자에 의해). flags 인수는 요청된 버퍼의 종류를 나타내는 정수로, 예를 들어 반환된 버퍼가 읽기 전용인지 또는 쓰기 가능한지에 영향을 미칩니다. inspect.BufferFlags는 플래그를 해석하는 편리한 방법을 제공합니다. 이 메서드는 memoryview 객체를 반환해야 합니다.
+
+object.__release_buffer__(self, buffer)
+Called when a buffer is no longer needed. The buffer argument is a memoryview object that was previously returned by __buffer__(). The method must release any resources associated with the buffer. This method should return None. Buffer objects that do not need to perform any cleanup are not required to implement this method.
+
+object.__release_buffer__(self, buffer)
+버퍼가 더 이상 필요하지 않을 때 호출됩니다. buffer 인수는 이전에 __buffer__()가 반환한 memoryview 객체입니다. 이 메서드는 버퍼와 관련된 모든 리소스를 해제해야 합니다. 이 메서드는 None을 반환해야 합니다. 정리를 수행할 필요가 없는 버퍼 객체는 이 메서드를 구현할 필요가 없습니다.
+
+Added in version 3.12.
+
+버전 3.12에서 추가됨.
+
+See also
+PEP 688 - Making the buffer protocol accessible in Python
+Introduces the Python __buffer__ and __release_buffer__ methods.
+
+참고
+PEP 688 - 버퍼 프로토콜을 Python에서 접근 가능하게 만들기
+Python __buffer__ 및 __release_buffer__ 메서드를 소개합니다.
+
+collections.abc.Buffer
+ABC for buffer types.
+
+collections.abc.Buffer
+버퍼 타입을 위한 ABC(Abstract Base Class).
+
+### 3.3.12. Special method lookup
+
+### 3.3.12. 특수 메서드 조회
+
+For custom classes, implicit invocations of special methods are only guaranteed to work correctly if defined on an object's type, not in the object's instance dictionary. That behaviour is the reason why the following code raises an exception:
+
+사용자 정의 클래스의 경우, 특수 메서드의 암시적 호출은 객체의 인스턴스 딕셔너리가 아닌 객체의 타입에 정의된 경우에만 올바르게 작동하도록 보장됩니다. 다음 코드가 예외를 발생시키는 이유가 바로 그 동작 때문입니다:
+
+```python
+>>>
+class C:
+    pass
+
+c = C()
+c.__len__ = lambda: 5
+len(c)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: object of type 'C' has no len()
+```
+
+The rationale behind this behaviour lies with a number of special methods such as __hash__() and __repr__() that are implemented by all objects, including type objects. If the implicit lookup of these methods used the conventional lookup process, they would fail when invoked on the type object itself:
+
+이러한 동작의 근거는 __hash__()와 __repr__()와 같은 여러 특수 메서드가 타입 객체를 포함한 모든 객체에서 구현된다는 점에 있습니다. 이러한 메서드의 암시적 조회가 기존의 조회 프로세스를 사용한다면, 타입 객체 자체에서 호출될 때 실패할 것입니다:
+
+```python
+>>>
+1 .__hash__() == hash(1)
+True
+int.__hash__() == hash(int)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: descriptor '__hash__' of 'int' object needs an argument
+```
+
+Incorrectly attempting to invoke an unbound method of a class in this way is sometimes referred to as 'metaclass confusion', and is avoided by bypassing the instance when looking up special methods:
+
+이러한 방식으로 클래스의 비바인드 메서드를 잘못 호출하려는 시도는 때때로 '메타클래스 혼란'으로 불리며, 특수 메서드를 조회할 때 인스턴스를 우회함으로써 이를 피합니다:
+
+```python
+>>>
+type(1).__hash__(1) == hash(1)
+True
+type(int).__hash__(int) == hash(int)
+True
+```
+
+In addition to bypassing any instance attributes in the interest of correctness, implicit special method lookup generally also bypasses the __getattribute__() method even of the object's metaclass:
+
+정확성을 위해 인스턴스 속성을 우회하는 것 외에도, 암시적 특수 메서드 조회는 일반적으로 객체의 메타클래스의 __getattribute__() 메서드도 우회합니다:
+
+```python
+>>>
+class Meta(type):
+    def __getattribute__(*args):
+        print("Metaclass getattribute invoked")
+        return type.__getattribute__(*args)
+
+class C(object, metaclass=Meta):
+    def __len__(self):
+        return 10
+    def __getattribute__(*args):
+        print("Class getattribute invoked")
+        return object.__getattribute__(*args)
+
+c = C()
+c.__len__()                 # Explicit lookup via instance
+Class getattribute invoked
+10
+type(c).__len__(c)          # Explicit lookup via type
+Metaclass getattribute invoked
+10
+len(c)                      # Implicit lookup
+10
+```
+
+Bypassing the __getattribute__() machinery in this fashion provides significant scope for speed optimisations within the interpreter, at the cost of some flexibility in the handling of special methods (the special method must be set on the class object itself in order to be consistently invoked by the interpreter).
+
+이러한 방식으로 __getattribute__() 기계를 우회하면 인터프리터 내에서 속도 최적화를 위한 상당한 범위를 제공하지만, 특수 메서드 처리의 유연성이 일부 제한됩니다(인터프리터에 의해 일관되게 호출되려면 특수 메서드가 클래스 객체 자체에 설정되어야 합니다).
+
+## 3.4. Coroutines
+
+## 3.4. 코루틴
+
+### 3.4.1. Awaitable Objects
+
+### 3.4.1. 대기 가능한 객체
+
+An awaitable object generally implements an __await__() method. Coroutine objects returned from async def functions are awaitable.
+
+대기 가능한 객체는 일반적으로 __await__() 메서드를 구현합니다. async def 함수에서 반환된 코루틴 객체는 대기 가능합니다.
+
+Note The generator iterator objects returned from generators decorated with types.coroutine() are also awaitable, but they do not implement __await__().
+
+참고 types.coroutine()으로 장식된 제너레이터에서 반환된 제너레이터 반복자 객체도 대기 가능하지만, __await__()을 구현하지는 않습니다.
+
+object.__await__(self)
+Must return an iterator. Should be used to implement awaitable objects. For instance, asyncio.Future implements this method to be compatible with the await expression. The object class itself is not awaitable and does not provide this method.
+
+object.__await__(self)
+반복자를 반환해야 합니다. 대기 가능한 객체를 구현하는 데 사용해야 합니다. 예를 들어, asyncio.Future는 await 표현식과 호환되기 위해 이 메서드를 구현합니다. object 클래스 자체는 대기 가능하지 않으며 이 메서드를 제공하지 않습니다.
+
+Note The language doesn't place any restriction on the type or value of the objects yielded by the iterator returned by __await__, as this is specific to the implementation of the asynchronous execution framework (e.g. asyncio) that will be managing the awaitable object.
+
+참고 언어는 __await__에 의해 반환된 반복자가 산출하는 객체의 타입이나 값에 제한을 두지 않습니다. 이는 대기 가능한 객체를 관리할 비동기 실행 프레임워크(예: asyncio)의 구현에 특화되어 있기 때문입니다.
+
+Added in version 3.5.
+
+버전 3.5에서 추가됨.
+
+See also PEP 492 for additional information about awaitable objects.
+
+대기 가능한 객체에 대한 추가 정보는 PEP 492를 참조하세요.
+
+### 3.4.2. Coroutine Objects
+
+### 3.4.2. 코루틴 객체
+
+Coroutine objects are awaitable objects. A coroutine's execution can be controlled by calling __await__() and iterating over the result. When the coroutine has finished executing and returns, the iterator raises StopIteration, and the exception's value attribute holds the return value. If the coroutine raises an exception, it is propagated by the iterator. Coroutines should not directly raise unhandled StopIteration exceptions.
+
+코루틴 객체는 대기 가능한 객체입니다. 코루틴의 실행은 __await__()를 호출하고 결과를 반복함으로써 제어할 수 있습니다. 코루틴이 실행을 마치고 반환하면, 반복자는 StopIteration을 발생시키고, 예외의 value 속성은 반환 값을 보유합니다. 코루틴이 예외를 발생시키면, 이는 반복자에 의해 전파됩니다. 코루틴은 직접적으로 처리되지 않은 StopIteration 예외를 발생시키지 않아야 합니다.
+
+Coroutines also have the methods listed below, which are analogous to those of generators (see Generator-iterator methods). However, unlike generators, coroutines do not directly support iteration.
+
+코루틴은 또한 아래 나열된 메서드를 가지고 있으며, 이는 제너레이터의 메서드(Generator-iterator 메서드 참조)와 유사합니다. 그러나 제너레이터와 달리 코루틴은 직접적인 반복을 지원하지 않습니다.
+
+Changed in version 3.5.2: It is a RuntimeError to await on a coroutine more than once.
+
+버전 3.5.2에서 변경됨: 코루틴을 두 번 이상 대기하는 것은 RuntimeError입니다.
+
+coroutine.send(value)
+Starts or resumes execution of the coroutine. If value is None, this is equivalent to advancing the iterator returned by __await__(). If value is not None, this method delegates to the send() method of the iterator that caused the coroutine to suspend. The result (return value, StopIteration, or other exception) is the same as when iterating over the __await__() return value, described above.
+
+coroutine.send(value)
+코루틴의 실행을 시작하거나 재개합니다. value가 None인 경우, 이는 __await__()에 의해 반환된 반복자를 진행시키는 것과 동등합니다. value가 None이 아닌 경우, 이 메서드는 코루틴을 일시 중단시킨 반복자의 send() 메서드에 위임합니다. 결과(반환 값, StopIteration 또는 다른 예외)는 위에서 설명한 대로 __await__() 반환 값을 반복할 때와 동일합니다.
+
+coroutine.throw(value)
+coroutine.throw(type[, value[, traceback]])
+Raises the specified exception in the coroutine. This method delegates to the throw() method of the iterator that caused the coroutine to suspend, if it has such a method. Otherwise, the exception is raised at the suspension point. The result (return value, StopIteration, or other exception) is the same as when iterating over the __await__() return value, described above. If the exception is not caught in the coroutine, it propagates back to the caller.
+
+coroutine.throw(value)
+coroutine.throw(type[, value[, traceback]])
+코루틴에서 지정된 예외를 발생시킵니다. 이 메서드는 코루틴을 일시 중단시킨 반복자에 throw() 메서드가 있는 경우 해당 메서드에 위임합니다. 그렇지 않으면, 일시 중단 지점에서 예외가 발생합니다. 결과(반환 값, StopIteration 또는 다른 예외)는 위에서 설명한 대로 __await__() 반환 값을 반복할 때와 동일합니다. 예외가 코루틴에서 잡히지 않으면, 호출자에게 다시 전파됩니다.
+
+Changed in version 3.12: The second signature (type[, value[, traceback]]) is deprecated and may be removed in a future version of Python.
+
+버전 3.12에서 변경됨: 두 번째 서명(type[, value[, traceback]])은 더 이상 사용되지 않으며 향후 Python 버전에서 제거될 수 있습니다.
+
+coroutine.close()
+Causes the coroutine to clean itself up and exit. If the coroutine is suspended, this method first delegates to the close() method of the iterator that caused the coroutine to suspend, if it has such a method. Then it raises GeneratorExit at the suspension point, causing the coroutine to immediately clean itself up. Finally, the coroutine is marked as having finished executing, even if it was never started.
+
+coroutine.close()
+코루틴이 자신을 정리하고 종료하게 합니다. 코루틴이 일시 중단된 경우, 이 메서드는 코루틴을 일시 중단시킨 반복자에 close() 메서드가 있는 경우 해당 메서드에 먼저 위임합니다. 그런 다음 일시 중단 지점에서 GeneratorExit을 발생시켜 코루틴이 즉시 자신을 정리하게 합니다. 마지막으로, 코루틴은 시작된 적이 없더라도 실행을 완료한 것으로 표시됩니다.
+
+Coroutine objects are automatically closed using the above process when they are about to be destroyed.
+
+코루틴 객체는 파괴되기 직전에 위의 프로세스를 사용하여 자동으로 닫힙니다.
+
+### 3.4.3. Asynchronous Iterators
+
+### 3.4.3. 비동기 반복자
+
+An asynchronous iterator can call asynchronous code in its __anext__ method.
+
+비동기 반복자는 __anext__ 메서드에서 비동기 코드를 호출할 수 있습니다.
+
+Asynchronous iterators can be used in an async for statement.
+
+비동기 반복자는 async for 문에서 사용할 수 있습니다.
+
+The object class itself does not provide these methods.
+
+object 클래스 자체는 이러한 메서드를 제공하지 않습니다.
+
+object.__aiter__(self)
+Must return an asynchronous iterator object.
+
+object.__aiter__(self)
+비동기 반복자 객체를 반환해야 합니다.
+
+object.__anext__(self)
+Must return an awaitable resulting in a next value of the iterator. Should raise a StopAsyncIteration error when the iteration is over.
+
+object.__anext__(self)
+반복자의 다음 값으로 이어지는 대기 가능한 객체를 반환해야 합니다. 반복이 끝났을 때 StopAsyncIteration 오류를 발생시켜야 합니다.
+
+An example of an asynchronous iterable object:
+
+비동기 반복 가능한 객체의 예:
+
+```python
+class Reader:
+    async def readline(self):
+        ...
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        val = await self.readline()
+        if val == b'':
+            raise StopAsyncIteration
+        return val
+```
+
+Added in version 3.5.
+
+버전 3.5에서 추가됨.
+
+Changed in version 3.7: Prior to Python 3.7, __aiter__() could return an awaitable that would resolve to an asynchronous iterator.
+
+버전 3.7에서 변경됨: Python 3.7 이전에는, __aiter__()가 비동기 반복자로 해결될 대기 가능한 객체를 반환할 수 있었습니다.
+
+Starting with Python 3.7, __aiter__() must return an asynchronous iterator object. Returning anything else will result in a TypeError error.
+
+Python 3.7부터, __aiter__()는 비동기 반복자 객체를 반환해야 합니다. 다른 것을 반환하면 TypeError 오류가 발생합니다.
+
+### 3.4.4. Asynchronous Context Managers
+
+### 3.4.4. 비동기 컨텍스트 관리자
+
+An asynchronous context manager is a context manager that is able to suspend execution in its __aenter__ and __aexit__ methods.
+
+비동기 컨텍스트 관리자는 __aenter__ 및 __aexit__ 메서드에서 실행을 중단할 수 있는 컨텍스트 관리자입니다.
+
+Asynchronous context managers can be used in an async with statement.
+
+비동기 컨텍스트 관리자는 async with 문에서 사용할 수 있습니다.
+
+The object class itself does not provide these methods.
+
+object 클래스 자체는 이러한 메서드를 제공하지 않습니다.
+
+object.__aenter__(self)
+Semantically similar to __enter__(), the only difference being that it must return an awaitable.
+
+object.__aenter__(self)
+의미적으로 __enter__()와 유사하며, 유일한 차이점은 대기 가능한 객체를 반환해야 한다는 것입니다.
+
+object.__aexit__(self, exc_type, exc_value, traceback)
+Semantically similar to __exit__(), the only difference being that it must return an awaitable.
+
+object.__aexit__(self, exc_type, exc_value, traceback)
+의미적으로 __exit__()와 유사하며, 유일한 차이점은 대기 가능한 객체를 반환해야 한다는 것입니다.
+
+An example of an asynchronous context manager class:
+
+비동기 컨텍스트 관리자 클래스의 예:
+
+```python
+class AsyncContextManager:
+    async def __aenter__(self):
+        await log('entering context')
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await log('exiting context')
+```
+
+Added in version 3.5.
+
+버전 3.5에서 추가됨.

@@ -2672,3 +2672,69 @@ Called to implement the built-in functions complex(), int() and float(). Should 
 
 object.__index__(self)
 Called to implement operator.index(), and whenever Python needs to losslessly convert the numeric object to an integer object (such as in slicing, or in the built-in bin(), hex() and oct() functions). Presence of this method indicates that the numeric object is an integer type. Must return an integer.
+
+operator.index()를 구현하기 위해 호출되며, 파이썬이 숫자 객체를 정수 객체로 무손실 변환해야 할 때마다(슬라이스나 내장 함수 bin(), hex(), oct()에서와 같이) 호출됩니다. 이 메서드의 존재는 숫자 객체가 정수 타입임을 나타냅니다. 정수를 반환해야 합니다.
+
+If __int__(), __float__() and __complex__() are not defined then corresponding built-in functions int(), float() and complex() fall back to __index__().
+
+__int__(), __float__() 및 __complex__()가 정의되지 않은 경우, 해당 내장 함수 int(), float() 및 complex()는 __index__()로 대체됩니다.
+
+object.__round__(self[, ndigits])
+object.__trunc__(self)
+object.__floor__(self)
+object.__ceil__(self)
+Called to implement the built-in function round() and math functions trunc(), floor() and ceil(). Unless ndigits is passed to __round__() all these methods should return the value of the object truncated to an Integral (typically an int).
+
+내장 함수 round()와 수학 함수 trunc(), floor() 및 ceil()을 구현하기 위해 호출됩니다. __round__()에 ndigits가 전달되지 않는 한, 이 메서드들은 Integral(일반적으로 int)로 절삭된 객체의 값을 반환해야 합니다.
+
+The built-in function int() falls back to __trunc__() if neither __int__() nor __index__() is defined.
+
+내장 함수 int()는 __int__()와 __index__() 모두 정의되지 않은 경우 __trunc__()로 대체됩니다.
+
+Changed in version 3.11: The delegation of int() to __trunc__() is deprecated.
+
+버전 3.11에서 변경됨: int()의 __trunc__()로의 위임은 더 이상 사용되지 않습니다.
+
+### 3.3.9. With Statement Context Managers
+
+### 3.3.9. With 문 컨텍스트 관리자
+
+A context manager is an object that defines the runtime context to be established when executing a with statement. The context manager handles the entry into, and the exit from, the desired runtime context for the execution of the block of code. Context managers are normally invoked using the with statement (described in section The with statement), but can also be used by directly invoking their methods.
+
+컨텍스트 관리자는 with 문을 실행할 때 설정될 런타임 컨텍스트를 정의하는 객체입니다. 컨텍스트 관리자는 코드 블록의 실행을 위해 원하는 런타임 컨텍스트로의 진입과 종료를 처리합니다. 컨텍스트 관리자는 일반적으로 with 문(with 문 섹션에서 설명)을 사용하여 호출되지만, 메서드를 직접 호출하여 사용할 수도 있습니다.
+
+Typical uses of context managers include saving and restoring various kinds of global state, locking and unlocking resources, closing opened files, etc.
+
+컨텍스트 관리자의 일반적인 용도에는 다양한 종류의 전역 상태 저장 및 복원, 자원 잠금 및 잠금 해제, 열린 파일 닫기 등이 있습니다.
+
+For more information on context managers, see Context Manager Types. The object class itself does not provide the context manager methods.
+
+컨텍스트 관리자에 대한 자세한 정보는 컨텍스트 관리자 타입을 참조하세요. object 클래스 자체는 컨텍스트 관리자 메서드를 제공하지 않습니다.
+
+object.__enter__(self)
+Enter the runtime context related to this object. The with statement will bind this method's return value to the target(s) specified in the as clause of the statement, if any.
+
+object.__enter__(self)
+이 객체와 관련된 런타임 컨텍스트에 진입합니다. with 문은 이 메서드의 반환 값을 문의 as 절에 지정된 대상(있는 경우)에 바인딩합니다.
+
+object.__exit__(self, exc_type, exc_value, traceback)
+Exit the runtime context related to this object. The parameters describe the exception that caused the context to be exited. If the context was exited without an exception, all three arguments will be None.
+
+object.__exit__(self, exc_type, exc_value, traceback)
+이 객체와 관련된 런타임 컨텍스트를 종료합니다. 매개변수는 컨텍스트가 종료되게 한 예외를 설명합니다. 컨텍스트가 예외 없이 종료된 경우, 세 인수 모두 None이 됩니다.
+
+If an exception is supplied, and the method wishes to suppress the exception (i.e., prevent it from being propagated), it should return a true value. Otherwise, the exception will be processed normally upon exit from this method.
+
+예외가 제공되고 메서드가 예외를 억제하려는 경우(즉, 전파되지 않도록 방지), true 값을 반환해야 합니다. 그렇지 않으면, 이 메서드에서 나갈 때 예외가 정상적으로 처리됩니다.
+
+Note that __exit__() methods should not reraise the passed-in exception; this is the caller's responsibility.
+
+__exit__() 메서드가 전달된 예외를 다시 발생시켜서는 안 된다는 점에 유의하세요. 이는 호출자의 책임입니다.
+
+See also
+PEP 343 - The "with" statement
+The specification, background, and examples for the Python with statement.
+
+참고
+PEP 343 - "with" 문
+Python with 문의 명세, 배경 및 예제입니다.

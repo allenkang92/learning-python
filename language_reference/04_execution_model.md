@@ -337,3 +337,92 @@ See also the description of the try statement in section The try statement and r
 > **참고:** 예외 메시지는 Python API의 일부가 아닙니다. 그 내용은 경고 없이 한 버전의 파이썬에서 다음 버전으로 변경될 수 있으며, 여러 버전의 인터프리터에서 실행될 코드에서 이에 의존해서는 안 됩니다.
 
 try 문에 대한 설명은 try 문 섹션을 참조하고, raise 문에 대한 설명은 raise 문 섹션을 참조하십시오.
+
+## 4.4. The `__main__` module
+
+The `__main__` module serves a special purpose in Python. It is the module that represents the entry point script or the current interactive session. When a Python script is executed directly (e.g., `python script.py`), Python creates a `__main__` module, sets its `__name__` attribute to `"__main__"`, and executes the script's code within this module's namespace.
+
+## 4.4. `__main__` 모듈
+
+`__main__` 모듈은 파이썬에서 특별한 목적을 갖습니다. 이 모듈은 진입점 스크립트나 현재 대화형 세션을 나타냅니다. 파이썬 스크립트가 직접 실행될 때(예: `python script.py`), 파이썬은 `__main__` 모듈을 생성하고 그 `__name__` 속성을 `"__main__"`으로 설정한 후, 이 모듈의 네임스페이스 내에서 스크립트의 코드를 실행합니다.
+
+This behavior is the basis for the common Python idiom:
+
+이 동작은 일반적인 파이썬 관용구의 기반입니다:
+
+```python
+if __name__ == "__main__":
+    # Code to run when the module is executed directly
+    ...
+```
+
+This conditional block allows code to be executed only when the module is run directly, not when it is imported by another module.
+
+이 조건 블록은 모듈이 직접 실행될 때만 코드가 실행되도록 하며, 다른 모듈에 의해 임포트될 때는 실행되지 않습니다.
+
+When a module is imported, its `__name__` attribute is set to the module's full name within the import system. For example, if a module named `foo` contains a module named `bar`, then within `bar`, the value of `__name__` would be `"foo.bar"`.
+
+모듈이 임포트될 때, 그 `__name__` 속성은 임포트 시스템 내의 모듈의 전체 이름으로 설정됩니다. 예를 들어, `foo`라는 모듈이 `bar`라는 모듈을 포함하고 있다면, `bar` 내에서 `__name__`의 값은 `"foo.bar"`가 됩니다.
+
+When Python executes a script with the `-m` command line option, it first searches for the named module, then creates a `__main__` module, sets `__name__` to `"__main__"`, and executes the contents of the module within this context.
+
+파이썬이 `-m` 명령줄 옵션으로 스크립트를 실행할 때, 먼저 지정된 모듈을 검색한 다음 `__main__` 모듈을 생성하고 `__name__`을 `"__main__"`으로 설정한 후, 이 컨텍스트 내에서 모듈의 내용을 실행합니다.
+
+## 4.5. Parameter passing
+
+Function parameters are passed by assignment in Python. Since assignment just creates references to objects, parameters in the calling function become aliases of the arguments actually passed in, which are objects. When a mutable object is passed as an argument, the function can modify it, and the changes will be visible to the caller.
+
+## 4.5. 매개변수 전달
+
+함수 매개변수는 파이썬에서 할당에 의해 전달됩니다. 할당은 단지 객체에 대한 참조를 생성하므로, 호출 함수의 매개변수는 실제로 전달된 인수(객체)의 별칭이 됩니다. 변경 가능한 객체가 인수로 전달되면, 함수는 이를 수정할 수 있으며, 변경 사항은 호출자에게 표시됩니다.
+
+Default parameter values are evaluated only once, when the function definition is evaluated. This can create unexpected behavior, especially when the default value is a mutable object:
+
+기본 매개변수 값은 함수 정의가 평가될 때 한 번만 평가됩니다. 이는 특히 기본값이 변경 가능한 객체일 때 예상치 못한 동작을 만들 수 있습니다:
+
+```python
+def append_to(element, to=[]):
+    to.append(element)
+    return to
+
+my_list = append_to(1)  # Returns [1]
+my_list = append_to(2)  # Returns [1, 2], not [2]
+```
+
+This happens because `to=[]` creates a list that persists between function calls. To avoid this behavior, use `None` as the default and assign the actual default value inside the function:
+
+이는 `to=[]`가 함수 호출 간에 지속되는 리스트를 생성하기 때문에 발생합니다. 이 동작을 피하려면 기본값으로 `None`을 사용하고 함수 내에서 실제 기본값을 할당하세요:
+
+```python
+def append_to(element, to=None):
+    if to is None:
+        to = []
+    to.append(element)
+    return to
+```
+
+## 4.6. Context managers and the with statement
+
+The `with` statement allows objects called context managers to define the runtime context for the statement's code block. Context managers are objects that implement the `__enter__` and `__exit__` methods.
+
+## 4.6. 컨텍스트 관리자와 with 문
+
+`with` 문은 컨텍스트 관리자라는 객체가 문의 코드 블록에 대한 런타임 컨텍스트를 정의할 수 있게 합니다. 컨텍스트 관리자는 `__enter__`와 `__exit__` 메서드를 구현하는 객체입니다.
+
+The execution of a `with` statement proceeds as follows:
+1. The context expression (the expression after `with`) is evaluated to obtain a context manager.
+2. The context manager's `__enter__` method is called.
+3. The `as` target, if specified, is bound to the return value of `__enter__`.
+4. The code block is executed.
+5. The context manager's `__exit__` method is called, whether the block completes normally or raises an exception.
+
+`with` 문의 실행은 다음과 같이 진행됩니다:
+1. 컨텍스트 표현식(`with` 다음의 표현식)이 평가되어 컨텍스트 관리자를 얻습니다.
+2. 컨텍스트 관리자의 `__enter__` 메서드가 호출됩니다.
+3. `as` 대상이 지정된 경우, `__enter__`의 반환값에 바인딩됩니다.
+4. 코드 블록이 실행됩니다.
+5. 블록이 정상적으로 완료되든 예외를 발생시키든 상관없이 컨텍스트 관리자의 `__exit__` 메서드가 호출됩니다.
+
+This mechanism enables the `with` statement to provide clean management of resources, such as file handles or database connections, ensuring they are properly acquired and released.
+
+이 메커니즘을 통해 `with` 문은 파일 핸들이나 데이터베이스 연결과 같은 리소스를 깔끔하게 관리할 수 있으며, 리소스가 적절하게 획득되고 해제되도록 보장합니다.

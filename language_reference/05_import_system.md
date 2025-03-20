@@ -146,7 +146,7 @@ To selectively prevent the import of some modules from a hook early on the meta 
 The latter indicates that the meta path search should continue, while raising an exception terminates it immediately.  
 후자는 메타 경로 검색이 계속되어야 함을 나타내고, 예외를 발생시키면 즉시 종료됨을 의미합니다.
 
-5.7. Package Relative Imports  
+## 5.7. Package Relative Imports  
 5.7. 패키지 상대 임포트  
 Relative imports use leading dots.  
 상대 임포트는 선행 점을 사용합니다.  
@@ -182,7 +182,7 @@ the reason for this is that:
 should expose XXX.YYY.ZZZ as a usable expression, but .moduleY is not a valid expression.  
   import XXX.YYY.ZZZ 는 XXX.YYY.ZZZ를 사용 가능한 표현식으로 노출해야 하지만, .moduleY는 유효한 표현식이 아닙니다.
 
-5.8. Special considerations for __main__  
+## 5.8. Special considerations for __main__  
 5.8. __main__에 대한 특별 고려 사항  
 The __main__ module is a special case relative to Python’s import system.  
 __main__ 모듈은 파이썬의 임포트 시스템에 대해 특별한 사례입니다.  
@@ -220,7 +220,7 @@ Note also that even when __main__ corresponds with an importable module and __ma
 This is due to the fact that blocks guarded by if __name__ == "__main__": checks only execute when the module is used to populate the __main__ namespace, and not during normal import.  
 이는 if __name__ == "__main__": 검사로 보호된 블록이 모듈이 __main__ 네임스페이스를 채우는 경우에만 실행되고, 일반 임포트 시에는 실행되지 않기 때문입니다.
 
-5.9. References  
+## 5.9. References  
 5.9. 참고 문헌  
 The import machinery has evolved considerably since Python’s early days.  
 파이썬의 초기 시절 이후로 임포트 메커니즘은 크게 발전했습니다.  

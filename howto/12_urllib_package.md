@@ -1,40 +1,3 @@
-
-Python logo
-
-3.13.2
-Quick search
-
-English
-Theme
-Auto
-Table of Contents
-HOWTO Fetch Internet Resources Using The urllib Package
-Introduction
-Fetching URLs
-Data
-Headers
-Handling Exceptions
-URLError
-HTTPError
-Error Codes
-Wrapping it Up
-Number 1
-Number 2
-info and geturl
-Openers and Handlers
-Basic Authentication
-Proxies
-Sockets and Layers
-Footnotes
-Previous topic
-Unicode HOWTO
-
-Next topic
-An introduction to the ipaddress module
-
-This Page
-Report a Bug
-Show Source
 HOWTO Fetch Internet Resources Using The urllib Package
 Author:
 Michael Foord
@@ -397,13 +360,3 @@ In my case I have to use a proxy to access the internet at work. If you attempt 
 
 [6]
 urllib opener for SSL proxy (CONNECT method): ASPN Cookbook Recipe.
-
-© Copyright 2001-2025, Python Software Foundation.
-This page is licensed under the Python Software Foundation License Version 2.
-Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
-See History and License for more information.
-
-The Python Software Foundation is a non-profit corporation. Please donate.
-
-Last updated on Mar 17, 2025 (11:46 UTC). Found a bug?
-Created using Sphinx 8.2.3.

@@ -1,24 +1,3 @@
-
-Python logo
-
-3.13.2
-Quick search
-
-English
-Theme
-Auto
-Table of Contents
-timer file descriptor HOWTO
-Examples
-Previous topic
-Isolating Extension Modules
-
-Next topic
-The Python 2.3 Method Resolution Order
-
-This Page
-Report a Bug
-Show Source
 timer file descriptor HOWTO
 Release:
 1.13
@@ -228,12 +207,3 @@ finally:
        os.close(fd)
     sock.close()
     sock = None
-© Copyright 2001-2025, Python Software Foundation.
-This page is licensed under the Python Software Foundation License Version 2.
-Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
-See History and License for more information.
-
-The Python Software Foundation is a non-profit corporation. Please donate.
-
-Last updated on Mar 17, 2025 (11:46 UTC). Found a bug?
-Created using Sphinx 8.2.3.

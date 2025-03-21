@@ -1,29 +1,3 @@
-
-Python logo
-
-3.13.2
-Quick search
-
-English
-Theme
-Auto
-Table of Contents
-The Python 2.3 Method Resolution Order
-The beginning
-The C3 Method Resolution Order
-Examples
-Bad Method Resolution Orders
-The end
-Resources
-Previous topic
-timer file descriptor HOWTO
-
-Next topic
-Python experimental support for free threading
-
-This Page
-Report a Bug
-Show Source
 The Python 2.3 Method Resolution Order
 Note This is a historical document, provided as an appendix to the official documentation. The Method Resolution Order discussed here was introduced in Python 2.3, but it is still used in later versions – including Python 3.
 By Michele Simionato.
@@ -464,12 +438,3 @@ The paper A Monotonic Superclass Linearization for Dylan: https://doi.org/10.114
 [3]
 Guido van Rossum’s essay, Unifying types and classes in Python 2.2: https://web.archive.org/web/20140210194412/http://www.python.org/download/releases/2.2.2/descrintro
 
-© Copyright 2001-2025, Python Software Foundation.
-This page is licensed under the Python Software Foundation License Version 2.
-Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
-See History and License for more information.
-
-The Python Software Foundation is a non-profit corporation. Please donate.
-
-Last updated on Mar 17, 2025 (11:46 UTC). Found a bug?
-Created using Sphinx 8.2.3.

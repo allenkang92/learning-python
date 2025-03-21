@@ -1,33 +1,3 @@
-
-Python logo
-
-3.13.2
-Quick search
-
-English
-Theme
-Auto
-Table of Contents
-An introduction to the ipaddress module
-Creating Address/Network/Interface objects
-A Note on IP Versions
-IP Host Addresses
-Defining Networks
-Host Interfaces
-Inspecting Address/Network/Interface Objects
-Networks as lists of Addresses
-Comparisons
-Using IP Addresses with other modules
-Getting more detail when instance creation fails
-Previous topic
-HOWTO Fetch Internet Resources Using The urllib Package
-
-Next topic
-Instrumenting CPython with DTrace and SystemTap
-
-This Page
-Report a Bug
-Show Source
 An introduction to the ipaddress module
 author:
 Peter Moody
@@ -253,12 +223,3 @@ try:
     network = ipaddress.IPv4Network(address)
 except ValueError:
     print('address/netmask is invalid for IPv4:', address)
-© Copyright 2001-2025, Python Software Foundation.
-This page is licensed under the Python Software Foundation License Version 2.
-Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
-See History and License for more information.
-
-The Python Software Foundation is a non-profit corporation. Please donate.
-
-Last updated on Mar 17, 2025 (11:46 UTC). Found a bug?
-Created using Sphinx 8.2.3.

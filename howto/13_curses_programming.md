@@ -1,31 +1,3 @@
-
-Python logo
-
-3.13.2
-Quick search
-
-English
-Theme
-Auto
-Table of Contents
-Curses Programming with Python
-What is curses?
-The Python curses module
-Starting and ending a curses application
-Windows and Pads
-Displaying Text
-Attributes and Color
-User Input
-For More Information
-Previous topic
-Porting Extension Modules to Python 3
-
-Next topic
-Descriptor Guide
-
-This Page
-Report a Bug
-Show Source
 Curses Programming with Python
 Author:
 A.M. Kuchling, Eric S. Raymond
@@ -304,12 +276,3 @@ The ncurses FAQ
 
 “Console Applications with Urwid”: video of a PyCon CA 2012 talk demonstrating some applications written using Urwid.
 
-© Copyright 2001-2025, Python Software Foundation.
-This page is licensed under the Python Software Foundation License Version 2.
-Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
-See History and License for more information.
-
-The Python Software Foundation is a non-profit corporation. Please donate.
-
-Last updated on Mar 17, 2025 (11:46 UTC). Found a bug?
-Created using Sphinx 8.2.3.

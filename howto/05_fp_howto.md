@@ -1,48 +1,3 @@
-
-Python logo
-
-3.13.2
-Quick search
-
-English
-Theme
-Auto
-Table of Contents
-Functional Programming HOWTO
-Introduction
-Formal provability
-Modularity
-Ease of debugging and testing
-Composability
-Iterators
-Data Types That Support Iterators
-Generator expressions and list comprehensions
-Generators
-Passing values into a generator
-Built-in functions
-The itertools module
-Creating new iterators
-Calling functions on elements
-Selecting elements
-Combinatoric functions
-Grouping elements
-The functools module
-The operator module
-Small functions and the lambda expression
-Revision History and Acknowledgements
-References
-General
-Python-specific
-Python documentation
-Previous topic
-Enum HOWTO
-
-Next topic
-Logging HOWTO
-
-This Page
-Report a Bug
-Show Source
 Functional Programming HOWTO
 Author:
 A. M. Kuchling
@@ -812,12 +767,3 @@ PEP 289: “Generator Expressions”
 
 PEP 342: “Coroutines via Enhanced Generators” describes the new generator features in Python 2.5.
 
-© Copyright 2001-2025, Python Software Foundation.
-This page is licensed under the Python Software Foundation License Version 2.
-Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
-See History and License for more information.
-
-The Python Software Foundation is a non-profit corporation. Please donate.
-
-Last updated on Mar 17, 2025 (11:46 UTC). Found a bug?
-Created using Sphinx 8.2.3.

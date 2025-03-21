@@ -1,32 +1,3 @@
-
-Python logo
-
-3.13.2
-Quick search
-
-English
-Theme
-Auto
-Table of Contents
-Python experimental support for free threading
-Installation
-Identifying free-threaded Python
-The global interpreter lock in free-threaded Python
-Thread safety
-Known limitations
-Immortalization
-Frame objects
-Iterators
-Single-threaded performance
-Previous topic
-The Python 2.3 Method Resolution Order
-
-Next topic
-C API Extension Support for Free Threading
-
-This Page
-Report a Bug
-Show Source
 Python experimental support for free threading
 Starting with the 3.13 release, CPython has experimental support for a build of Python called free threading where the global interpreter lock (GIL) is disabled. Free-threaded execution allows for full utilization of the available processing power by running threads in parallel on available CPU cores. While not all software will benefit from this automatically, programs designed with threading in mind will run faster on multi-core hardware.
 
@@ -93,12 +64,3 @@ Sharing the same iterator object between multiple threads is generally not safe 
 Single-threaded performance
 The free-threaded build has additional overhead when executing Python code compared to the default GIL-enabled build. In 3.13, this overhead is about 40% on the pyperformance suite. Programs that spend most of their time in C extensions or I/O will see less of an impact. The largest impact is because the specializing adaptive interpreter (PEP 659) is disabled in the free-threaded build. We expect to re-enable it in a thread-safe way in the 3.14 release. This overhead is expected to be reduced in upcoming Python release. We are aiming for an overhead of 10% or less on the pyperformance suite compared to the default GIL-enabled build.
 
-© Copyright 2001-2025, Python Software Foundation.
-This page is licensed under the Python Software Foundation License Version 2.
-Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
-See History and License for more information.
-
-The Python Software Foundation is a non-profit corporation. Please donate.
-
-Last updated on Mar 17, 2025 (11:46 UTC). Found a bug?
-Created using Sphinx 8.2.3.

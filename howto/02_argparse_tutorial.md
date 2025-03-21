@@ -1,35 +1,3 @@
-
-Python logo
-
-3.13.2
-Quick search
-
-English
-Theme
-Auto
-Table of Contents
-Argparse Tutorial
-Concepts
-The basics
-Introducing Positional arguments
-Introducing Optional arguments
-Short options
-Combining Positional and Optional arguments
-Getting a little more advanced
-Specifying ambiguous arguments
-Conflicting options
-How to translate the argparse output
-Custom type converters
-Conclusion
-Previous topic
-argparse — Parser for command-line options, arguments and subcommands
-
-Next topic
-Migrating optparse code to argparse
-
-This Page
-Report a Bug
-Show Source
 Argparse Tutorial
 author:
 Tshepang Mbambo

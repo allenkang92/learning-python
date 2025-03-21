@@ -1,47 +1,3 @@
-
-Python logo
-
-3.13.2
-Quick search
-
-English
-Theme
-Auto
-Table of Contents
-Regular Expression HOWTO
-Introduction
-Simple Patterns
-Matching Characters
-Repeating Things
-Using Regular Expressions
-Compiling Regular Expressions
-The Backslash Plague
-Performing Matches
-Module-Level Functions
-Compilation Flags
-More Pattern Power
-More Metacharacters
-Grouping
-Non-capturing and Named Groups
-Lookahead Assertions
-Modifying Strings
-Splitting Strings
-Search and Replace
-Common Problems
-Use String Methods
-match() versus search()
-Greedy versus Non-Greedy
-Using re.VERBOSE
-Feedback
-Previous topic
-Logging Cookbook
-
-Next topic
-Socket Programming HOWTO
-
-This Page
-Report a Bug
-Show Source
 Regular Expression HOWTO
 Author:
 A.M. Kuchling <amk@amk.ca>
@@ -853,13 +809,3 @@ Feedback
 Regular expressions are a complicated topic. Did this document help you understand them? Were there parts that were unclear, or Problems you encountered that weren’t covered here? If so, please send suggestions for improvements to the author.
 
 The most complete book on regular expressions is almost certainly Jeffrey Friedl’s Mastering Regular Expressions, published by O’Reilly. Unfortunately, it exclusively concentrates on Perl and Java’s flavours of regular expressions, and doesn’t contain any Python material at all, so it won’t be useful as a reference for programming in Python. (The first edition covered Python’s now-removed regex module, which won’t help you much.) Consider checking it out from your library.
-
-© Copyright 2001-2025, Python Software Foundation.
-This page is licensed under the Python Software Foundation License Version 2.
-Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
-See History and License for more information.
-
-The Python Software Foundation is a non-profit corporation. Please donate.
-
-Last updated on Mar 17, 2025 (11:46 UTC). Found a bug?
-Created using Sphinx 8.2.3.

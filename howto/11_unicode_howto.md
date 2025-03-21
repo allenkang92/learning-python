@@ -1,42 +1,3 @@
-
-Python logo
-
-3.13.2
-Quick search
-
-English
-Theme
-Auto
-Table of Contents
-Unicode HOWTO
-Introduction to Unicode
-Definitions
-Encodings
-References
-Python’s Unicode Support
-The String Type
-Converting to Bytes
-Unicode Literals in Python Source Code
-Unicode Properties
-Comparing Strings
-Unicode Regular Expressions
-References
-Reading and Writing Unicode Data
-Unicode filenames
-Tips for Writing Unicode-aware Programs
-Converting Between File Encodings
-Files in an Unknown Encoding
-References
-Acknowledgements
-Previous topic
-Sorting Techniques
-
-Next topic
-HOWTO Fetch Internet Resources Using The urllib Package
-
-This Page
-Report a Bug
-Show Source
 Unicode HOWTO
 Release:
 1.12
@@ -435,12 +396,3 @@ The initial draft of this document was written by Andrew Kuchling. It has since 
 
 Thanks to the following people who have noted errors or offered suggestions on this article: Éric Araujo, Nicholas Bastin, Nick Coghlan, Marius Gedminas, Kent Johnson, Ken Krugler, Marc-André Lemburg, Martin von Löwis, Terry J. Reedy, Serhiy Storchaka, Eryk Sun, Chad Whitacre, Graham Wideman.
 
-© Copyright 2001-2025, Python Software Foundation.
-This page is licensed under the Python Software Foundation License Version 2.
-Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
-See History and License for more information.
-
-The Python Software Foundation is a non-profit corporation. Please donate.
-
-Last updated on Mar 17, 2025 (11:46 UTC). Found a bug?
-Created using Sphinx 8.2.3.

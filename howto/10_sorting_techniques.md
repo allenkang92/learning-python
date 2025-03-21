@@ -1,32 +1,3 @@
-
-Python logo
-
-3.13.2
-Quick search
-
-English
-Theme
-Auto
-Table of Contents
-Sorting Techniques
-Sorting Basics
-Key Functions
-Operator Module Functions and Partial Function Evaluation
-Ascending and Descending
-Sort Stability and Complex Sorts
-Decorate-Sort-Undecorate
-Comparison Functions
-Odds and Ends
-Partial Sorts
-Previous topic
-Socket Programming HOWTO
-
-Next topic
-Unicode HOWTO
-
-This Page
-Report a Bug
-Show Source
 Sorting Techniques
 Author:
 Andrew Dalke and Raymond Hettinger
@@ -237,12 +208,3 @@ heapq.nsmallest() and heapq.nlargest() return the n smallest and largest values,
 
 heapq.heappush() and heapq.heappop() create and maintain a partially sorted arrangement of data that keeps the smallest element at position 0. These functions are suitable for implementing priority queues which are commonly used for task scheduling.
 
-© Copyright 2001-2025, Python Software Foundation.
-This page is licensed under the Python Software Foundation License Version 2.
-Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
-See History and License for more information.
-
-The Python Software Foundation is a non-profit corporation. Please donate.
-
-Last updated on Mar 17, 2025 (11:46 UTC). Found a bug?
-Created using Sphinx 8.2.3.

@@ -1,46 +1,3 @@
-
-Python logo
-
-3.13.2
-Quick search
-
-English
-Theme
-Auto
-Table of Contents
-Logging HOWTO
-Basic Logging Tutorial
-When to use logging
-A simple example
-Logging to a file
-Logging variable data
-Changing the format of displayed messages
-Displaying the date/time in messages
-Next Steps
-Advanced Logging Tutorial
-Logging Flow
-Loggers
-Handlers
-Formatters
-Configuring Logging
-What happens if no configuration is provided
-Configuring Logging for a Library
-Logging Levels
-Custom Levels
-Useful Handlers
-Exceptions raised during logging
-Using arbitrary objects as messages
-Optimization
-Other resources
-Previous topic
-Functional Programming HOWTO
-
-Next topic
-Logging Cookbook
-
-This Page
-Report a Bug
-Show Source
 Logging HOWTO
 Author:
 Vinay Sajip <vinay_sajip at red-dove dot com>
@@ -648,12 +605,3 @@ Useful handlers included with the logging module.
 
 A logging cookbook
 
-© Copyright 2001-2025, Python Software Foundation.
-This page is licensed under the Python Software Foundation License Version 2.
-Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
-See History and License for more information.
-
-The Python Software Foundation is a non-profit corporation. Please donate.
-
-Last updated on Mar 17, 2025 (11:46 UTC). Found a bug?
-Created using Sphinx 8.2.3.

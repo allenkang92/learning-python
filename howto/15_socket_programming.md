@@ -1,32 +1,3 @@
-
-Python logo
-
-3.13.2
-Quick search
-
-English
-Theme
-Auto
-Table of Contents
-Socket Programming HOWTO
-Sockets
-History
-Creating a Socket
-IPC
-Using a Socket
-Binary Data
-Disconnecting
-When Sockets Die
-Non-blocking Sockets
-Previous topic
-Regular Expression HOWTO
-
-Next topic
-Sorting Techniques
-
-This Page
-Report a Bug
-Show Source
 Socket Programming HOWTO
 Author:
 Gordon McMillan
@@ -187,12 +158,3 @@ Actually, select can be handy even with blocking sockets. It’s one way of dete
 
 Portability alert: On Unix, select works both with the sockets and files. Don’t try this on Windows. On Windows, select works with sockets only. Also note that in C, many of the more advanced socket options are done differently on Windows. In fact, on Windows I usually use threads (which work very, very well) with my sockets.
 
-© Copyright 2001-2025, Python Software Foundation.
-This page is licensed under the Python Software Foundation License Version 2.
-Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
-See History and License for more information.
-
-The Python Software Foundation is a non-profit corporation. Please donate.
-
-Last updated on Mar 17, 2025 (11:46 UTC). Found a bug?
-Created using Sphinx 8.2.3.

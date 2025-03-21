@@ -1,51 +1,3 @@
-
-Python logo
-
-3.13.2
-Quick search
-
-English
-Theme
-Auto
-Table of Contents
-Descriptor Guide
-Primer
-Simple example: A descriptor that returns a constant
-Dynamic lookups
-Managed attributes
-Customized names
-Closing thoughts
-Complete Practical Example
-Validator class
-Custom validators
-Practical application
-Technical Tutorial
-Abstract
-Definition and introduction
-Descriptor protocol
-Overview of descriptor invocation
-Invocation from an instance
-Invocation from a class
-Invocation from super
-Summary of invocation logic
-Automatic name notification
-ORM example
-Pure Python Equivalents
-Properties
-Functions and methods
-Kinds of methods
-Static methods
-Class methods
-Member objects and __slots__
-Previous topic
-Curses Programming with Python
-
-Next topic
-Debugging C API extensions and CPython Internals with GDB
-
-This Page
-Report a Bug
-Show Source
 Descriptor Guide
 Author:
 Raymond Hettinger
@@ -1058,12 +1010,3 @@ h.xz
 Traceback (most recent call last):
     ...
 AttributeError: 'H' object has no attribute 'xz'
-© Copyright 2001-2025, Python Software Foundation.
-This page is licensed under the Python Software Foundation License Version 2.
-Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
-See History and License for more information.
-
-The Python Software Foundation is a non-profit corporation. Please donate.
-
-Last updated on Mar 17, 2025 (11:46 UTC). Found a bug?
-Created using Sphinx 8.2.3.

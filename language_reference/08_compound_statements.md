@@ -1033,3 +1033,880 @@ star_pattern           ::= "*" (capture_pattern | wildcard_pattern)
 - P1이 <subject>[0]와 일치함(이 일치가 이름도 바인딩할 수 있음에 유의)
 - P2가 <subject>[1]과 일치함(이 일치가 이름도 바인딩할 수 있음에 유의)
 - ... 등 해당 패턴/요소에 대해 계속됨.
+
+#### 8.6.4.9. Mapping Patterns
+
+A mapping pattern contains one or more key-value patterns. The syntax is similar to the construction of a dictionary. Syntax:
+
+```
+mapping_pattern     ::= "{" [items_pattern] "}"
+items_pattern       ::= ",".key_value_pattern+ ","?
+key_value_pattern   ::= (literal_pattern | value_pattern) ":" pattern
+                        | double_star_pattern
+double_star_pattern ::= "**" capture_pattern
+```
+
+At most one double star pattern may be in a mapping pattern. The double star pattern must be the last subpattern in the mapping pattern.
+
+Duplicate keys in mapping patterns are disallowed. Duplicate literal keys will raise a SyntaxError. Two keys that otherwise have the same value will raise a ValueError at runtime.
+
+The following is the logical flow for matching a mapping pattern against a subject value:
+
+1. If the subject value is not a mapping [3], the mapping pattern fails.
+2. If every key given in the mapping pattern is present in the subject mapping, and the pattern for each key matches the corresponding item of the subject mapping, the mapping pattern succeeds.
+3. If duplicate keys are detected in the mapping pattern, the pattern is considered invalid. A SyntaxError is raised for duplicate literal values; or a ValueError for named keys of the same value.
+
+> **Note:** Key-value pairs are matched using the two-argument form of the mapping subject's get() method. Matched key-value pairs must already be present in the mapping, and not created on-the-fly via __missing__() or __getitem__().
+
+In simple terms `{KEY1: P1, KEY2: P2, ... }` matches only if all the following happens:
+- check `<subject>` is a mapping
+- `KEY1` in `<subject>`
+- `P1` matches `<subject>[KEY1]`
+- … and so on for the corresponding KEY/pattern pair.
+
+#### 8.6.4.9. 매핑 패턴
+
+매핑 패턴은 하나 이상의 키-값 패턴을 포함합니다. 구문은 딕셔너리 구성과 유사합니다. 구문:
+
+```
+mapping_pattern     ::= "{" [items_pattern] "}"
+items_pattern       ::= ",".key_value_pattern+ ","?
+key_value_pattern   ::= (literal_pattern | value_pattern) ":" pattern
+                        | double_star_pattern
+double_star_pattern ::= "**" capture_pattern
+```
+
+매핑 패턴에는 최대 하나의 이중 별표 패턴이 있을 수 있습니다. 이중 별표 패턴은 매핑 패턴의 마지막 하위 패턴이어야 합니다.
+
+매핑 패턴에서 중복 키는 허용되지 않습니다. 중복된 리터럴 키는 SyntaxError를 발생시킵니다. 동일한 값을 가진 두 키는 런타임에 ValueError를 발생시킵니다.
+
+주체 값에 대한 매핑 패턴 일치의 논리적 흐름은 다음과 같습니다:
+
+1. 주체 값이 매핑이 아니면[3], 매핑 패턴은 실패합니다.
+2. 매핑 패턴에 주어진 모든 키가 주체 매핑에 존재하고, 각 키에 대한 패턴이 주체 매핑의 해당 항목과 일치하면 매핑 패턴은 성공합니다.
+3. 매핑 패턴에서 중복 키가 감지되면 패턴은 유효하지 않은 것으로 간주됩니다. 중복된 리터럴 값에 대해 SyntaxError가 발생하거나, 동일한 값의 명명된 키에 대해 ValueError가 발생합니다.
+
+> **참고:** 키-값 쌍은 매핑 주체의 get() 메서드의 두 인수 형식을 사용하여 일치됩니다. 일치하는 키-값 쌍은 매핑에 이미 존재해야 하며, __missing__() 또는 __getitem__()을 통해 즉석에서 생성되지 않아야 합니다.
+
+간단히 말해서 `{KEY1: P1, KEY2: P2, ... }`는 다음과 같은 모든 조건이 충족될 때만 일치합니다:
+- `<주체>`가 매핑인지 확인
+- `KEY1`이 `<주체>`에 있음
+- `P1`이 `<주체>[KEY1]`과 일치함
+- ... 등 해당 키/패턴 쌍에 대해 계속됩니다.
+
+#### 8.6.4.10. Class Patterns
+
+A class pattern represents a class and its positional and keyword arguments (if any). Syntax:
+
+```
+class_pattern       ::= name_or_attr "(" [pattern_arguments ","?] ")"
+pattern_arguments   ::= positional_patterns ["," keyword_patterns]
+                        | keyword_patterns
+positional_patterns ::= ",".pattern+
+keyword_patterns    ::= ",".keyword_pattern+
+keyword_pattern     ::= NAME "=" pattern
+```
+
+The same keyword should not be repeated in class patterns.
+
+The following is the logical flow for matching a class pattern against a subject value:
+
+1. If `name_or_attr` is not an instance of the builtin type, raise TypeError.
+2. If the subject value is not an instance of `name_or_attr` (tested via `isinstance()`), the class pattern fails.
+3. If no pattern arguments are present, the pattern succeeds. Otherwise, the subsequent steps depend on whether keyword or positional argument patterns are present.
+
+For a number of built-in types (specified below), a single positional subpattern is accepted which will match the entire subject; for these types keyword patterns also work as for other types.
+
+If only keyword patterns are present, they are processed as follows, one by one:
+
+I. The keyword is looked up as an attribute on the subject.
+  - If this raises an exception other than AttributeError, the exception bubbles up.
+  - If this raises AttributeError, the class pattern has failed.
+  - Else, the subpattern associated with the keyword pattern is matched against the subject's attribute value. If this fails, the class pattern fails; if this succeeds, the match proceeds to the next keyword.
+
+II. If all keyword patterns succeed, the class pattern succeeds.
+
+If any positional patterns are present, they are converted to keyword patterns using the `__match_args__` attribute on the class `name_or_attr` before matching:
+
+I. The equivalent of `getattr(cls, "__match_args__", ())` is called.
+  - If this raises an exception, the exception bubbles up.
+  - If the returned value is not a tuple, the conversion fails and TypeError is raised.
+  - If there are more positional patterns than `len(cls.__match_args__)`, TypeError is raised.
+  - Otherwise, positional pattern i is converted to a keyword pattern using `__match_args__[i]` as the keyword. `__match_args__[i]` must be a string; if not TypeError is raised.
+  - If there are duplicate keywords, TypeError is raised.
+
+See also Customizing positional arguments in class pattern matching
+
+II. Once all positional patterns have been converted to keyword patterns, the match proceeds as if there were only keyword patterns.
+
+For the following built-in types the handling of positional subpatterns is different:
+
+- bool
+- bytearray
+- bytes
+- dict
+- float
+- frozenset
+- int
+- list
+- set
+- str
+- tuple
+
+These classes accept a single positional argument, and the pattern there is matched against the whole object rather than an attribute. For example `int(0|1)` matches the value 0, but not the value 0.0.
+
+In simple terms `CLS(P1, attr=P2)` matches only if the following happens:
+- `isinstance(<subject>, CLS)`
+- convert `P1` to a keyword pattern using `CLS.__match_args__`
+- For each keyword argument `attr=P2`:
+  - `hasattr(<subject>, "attr")`
+  - `P2` matches `<subject>.attr`
+- … and so on for the corresponding keyword argument/pattern pair.
+
+#### 8.6.4.10. 클래스 패턴
+
+클래스 패턴은 클래스와 그 위치적 및 키워드 인수(있는 경우)를 나타냅니다. 구문:
+
+```
+class_pattern       ::= name_or_attr "(" [pattern_arguments ","?] ")"
+pattern_arguments   ::= positional_patterns ["," keyword_patterns]
+                        | keyword_patterns
+positional_patterns ::= ",".pattern+
+keyword_patterns    ::= ",".keyword_pattern+
+keyword_pattern     ::= NAME "=" pattern
+```
+
+동일한 키워드는 클래스 패턴에서 반복되지 않아야 합니다.
+
+주체 값에 대한 클래스 패턴 일치의 논리적 흐름은 다음과 같습니다:
+
+1. `name_or_attr`이 내장 타입의 인스턴스가 아니면 TypeError가 발생합니다.
+2. 주체 값이 `name_or_attr`의 인스턴스가 아니면(`isinstance()`를 통해 테스트됨), 클래스 패턴은 실패합니다.
+3. 패턴 인수가 없으면 패턴은 성공합니다. 그렇지 않으면 후속 단계는 키워드 또는 위치적 인수 패턴이 있는지에 따라 달라집니다.
+
+여러 내장 타입(아래에 지정된)의 경우, 전체 주체와 일치하는 단일 위치적 하위 패턴이 허용됩니다. 이러한 타입의 경우 키워드 패턴도 다른 타입과 마찬가지로 작동합니다.
+
+키워드 패턴만 있는 경우, 그것들은 다음과 같이 하나씩 처리됩니다:
+
+I. 키워드는 주체의 속성으로 조회됩니다.
+  - 이것이 AttributeError 이외의 예외를 발생시키면, 예외가 상위로 전파됩니다.
+  - 이것이 AttributeError를 발생시키면, 클래스 패턴은 실패합니다.
+  - 그렇지 않으면, 키워드 패턴과 연관된 하위 패턴이 주체의 속성 값과 대조됩니다. 이것이 실패하면 클래스 패턴은 실패합니다. 성공하면 다음 키워드로 진행됩니다.
+
+II. 모든 키워드 패턴이 성공하면 클래스 패턴은 성공합니다.
+
+위치적 패턴이 있는 경우, 일치하기 전에 클래스 `name_or_attr`의 `__match_args__` 속성을 사용하여 키워드 패턴으로 변환됩니다:
+
+I. `getattr(cls, "__match_args__", ())`와 동등한 것이 호출됩니다.
+  - 이것이 예외를 발생시키면, 예외가 상위로 전파됩니다.
+  - 반환된 값이 튜플이 아니면, 변환은 실패하고 TypeError가 발생합니다.
+  - 위치적 패턴이 `len(cls.__match_args__)`보다 많으면 TypeError가 발생합니다.
+  - 그렇지 않으면, 위치적 패턴 i는 키워드로 `__match_args__[i]`를 사용하여 키워드 패턴으로 변환됩니다. `__match_args__[i]`는 문자열이어야 합니다. 그렇지 않으면 TypeError가 발생합니다.
+  - 중복 키워드가 있으면 TypeError가 발생합니다.
+
+클래스 패턴 매칭에서 위치적 인수 사용자 정의하기도 참조하세요.
+
+II. 모든 위치적 패턴이 키워드 패턴으로 변환되면, 키워드 패턴만 있는 것처럼 일치가 진행됩니다.
+
+다음 내장 타입의 경우 위치적 하위 패턴의 처리가 다릅니다:
+
+- bool
+- bytearray
+- bytes
+- dict
+- float
+- frozenset
+- int
+- list
+- set
+- str
+- tuple
+
+이러한 클래스는 단일 위치적 인수를 받으며, 해당 패턴은 속성이 아닌 전체 객체와 대조됩니다. 예를 들어, `int(0|1)`은 값 0과 일치하지만 값 0.0과는 일치하지 않습니다.
+
+간단히 말해서, `CLS(P1, attr=P2)`는 다음이 모두 발생하는 경우에만 일치합니다:
+- `isinstance(<subject>, CLS)`
+- `CLS.__match_args__`를 사용하여 `P1`을 키워드 패턴으로 변환
+- 각 키워드 인수 `attr=P2`에 대해:
+  - `hasattr(<subject>, "attr")`
+  - `P2`가 `<subject>.attr`과 일치함
+- ... 등 해당 키워드 인수/패턴 쌍에 대해 계속됩니다.
+
+See also  
+PEP 634 – Structural Pattern Matching: Specification  
+PEP 636 – Structural Pattern Matching: Tutorial
+
+참조  
+PEP 634 – 구조적 패턴 매칭: 명세  
+PEP 636 – 구조적 패턴 매칭: 튜토리얼
+
+8.7. Function definitions
+------------------------
+
+A function definition defines a user-defined function object (see section The standard type hierarchy):
+
+8.7. 함수 정의
+------------------------
+
+함수 정의는 사용자 정의 함수 객체를 정의합니다(표준 타입 계층 섹션 참조):
+
+```
+funcdef                   ::= [decorators] "def" funcname [type_params] "(" [parameter_list] ")"
+                              ["->" expression] ":" suite
+decorators                ::= decorator+
+decorator                 ::= "@" assignment_expression NEWLINE
+parameter_list            ::= defparameter ("," defparameter)* "," "/" ["," [parameter_list_no_posonly]]
+                              | parameter_list_no_posonly
+parameter_list_no_posonly ::= defparameter ("," defparameter)* ["," [parameter_list_starargs]]
+                              | parameter_list_starargs
+parameter_list_starargs   ::= "*" [star_parameter] ("," defparameter)* ["," [parameter_star_kwargs]]
+                              "*" ("," defparameter)+ ["," [parameter_star_kwargs]]
+                              | parameter_star_kwargs
+parameter_star_kwargs     ::= "**" parameter [","]
+parameter                 ::= identifier [":" expression]
+star_parameter            ::= identifier [":" ["*"] expression]
+defparameter              ::= parameter ["=" expression]
+funcname                  ::= identifier
+```
+
+A function definition is an executable statement. Its execution binds the function name in the current local namespace to a function object (a wrapper around the executable code for the function). This function object contains a reference to the current global namespace as the global namespace to be used when the function is called.
+
+함수 정의는 실행 가능한 문장입니다. 실행 시 현재 지역 네임스페이스에서 함수 이름을 함수 객체(함수의 실행 가능한 코드를 감싸는 래퍼)에 바인딩합니다. 이 함수 객체는 함수가 호출될 때 사용될 전역 네임스페이스로써 현재 전역 네임스페이스에 대한 참조를 포함합니다.
+
+The function definition does not execute the function body; this gets executed only when the function is called. [4]
+
+함수 정의는 함수 본문을 실행하지 않으며, 이는 함수가 호출될 때만 실행됩니다. [4]
+
+A function definition may be wrapped by one or more decorator expressions. Decorator expressions are evaluated when the function is defined, in the scope that contains the function definition. The result must be a callable, which is invoked with the function object as the only argument. The returned value is bound to the function name instead of the function object. Multiple decorators are applied in nested fashion. For example, the following code
+
+함수 정의는 하나 이상의 데코레이터 표현식으로 감싸질 수 있습니다. 데코레이터 표현식은 함수가 정의될 때 함수 정의를 포함하는 스코프에서 평가됩니다. 그 결과는 호출 가능한 객체여야 하며, 함수 객체를 유일한 인수로 하여 호출됩니다. 반환된 값은 함수 객체 대신 함수 이름에 바인딩됩니다. 여러 데코레이터는 중첩된 방식으로 적용됩니다. 예를 들어, 다음 코드는
+
+```python
+@f1(arg)
+@f2
+def func(): pass
+```
+
+is roughly equivalent to
+
+다음과 대략적으로 동등합니다:
+
+```python
+def func(): pass
+func = f1(arg)(f2(func))
+```
+
+except that the original function is not temporarily bound to the name func.
+
+단, 원래 함수가 일시적으로 이름 func에 바인딩되지 않는다는 점이 다릅니다.
+
+Changed in version 3.9: Functions may be decorated with any valid assignment_expression. Previously, the grammar was much more restrictive; see PEP 614 for details.
+
+버전 3.9에서 변경됨: 이제 함수는 모든 유효한 assignment_expression으로 데코레이팅될 수 있습니다. 이전에는 문법이 훨씬 더 제한적이었습니다. 자세한 내용은 PEP 614를 참조하십시오.
+
+A list of type parameters may be given in square brackets between the function's name and the opening parenthesis for its parameter list. This indicates to static type checkers that the function is generic. At runtime, the type parameters can be retrieved from the function's __type_params__ attribute. See Generic functions for more.
+
+함수 이름과 매개변수 목록의 여는 괄호 사이에 대괄호로 타입 매개변수 목록을 지정할 수 있습니다. 이는 정적 타입 검사기에 함수가 제네릭임을 나타냅니다. 런타임에는 함수의 __type_params__ 속성에서 타입 매개변수를 검색할 수 있습니다. 자세한 내용은 제네릭 함수를 참조하십시오.
+
+Changed in version 3.12: Type parameter lists are new in Python 3.12.
+
+버전 3.12에서 변경됨: 타입 매개변수 목록은 Python 3.12에서 새롭게 추가되었습니다.
+
+When one or more parameters have the form parameter = expression, the function is said to have "default parameter values." For a parameter with a default value, the corresponding argument may be omitted from a call, in which case the parameter's default value is substituted. If a parameter has a default value, all following parameters up until the "*" must also have a default value — this is a syntactic restriction that is not expressed by the grammar.
+
+하나 이상의 매개변수가 parameter = expression 형태를 가질 때, 함수는 "기본 매개변수 값"을 갖는다고 합니다. 기본값이 있는 매개변수의 경우, 호출 시 해당하는 인수를 생략할 수 있으며, 이 경우 매개변수의 기본값이 대체됩니다. 매개변수에 기본값이 있으면 "*"까지의 모든 후속 매개변수도 기본값을 가져야 합니다 — 이는 문법으로 표현되지 않는 구문적 제한입니다.
+
+Default parameter values are evaluated from left to right when the function definition is executed. This means that the expression is evaluated once, when the function is defined, and that the same "pre-computed" value is used for each call. This is especially important to understand when a default parameter value is a mutable object, such as a list or a dictionary: if the function modifies the object (e.g. by appending an item to a list), the default parameter value is in effect modified. This is generally not what was intended. A way around this is to use None as the default, and explicitly test for it in the body of the function, e.g.:
+
+기본 매개변수 값은 함수 정의가 실행될 때 왼쪽에서 오른쪽으로 평가됩니다. 이는 표현식이 함수가 정의될 때 한 번만 평가되고, 각 호출에 동일한 "미리 계산된" 값이 사용됨을 의미합니다. 기본 매개변수 값이 리스트나 딕셔너리와 같은 가변 객체일 때 이해하는 것이 특히 중요합니다: 함수가 객체를 수정하면(예: 리스트에 항목 추가) 기본 매개변수 값이 실제로 수정됩니다. 이는 일반적으로 의도한 바가 아닙니다. 이를 해결하는 방법은 None을 기본값으로 사용하고 함수 본문에서 명시적으로 테스트하는 것입니다. 예:
+
+```python
+def whats_on_the_telly(penguin=None):
+    if penguin is None:
+        penguin = []
+    penguin.append("property of the zoo")
+    return penguin
+```
+
+Function call semantics are described in more detail in section Calls. A function call always assigns values to all parameters mentioned in the parameter list, either from positional arguments, from keyword arguments, or from default values. If the form "*identifier" is present, it is initialized to a tuple receiving any excess positional parameters, defaulting to the empty tuple. If the form "**identifier" is present, it is initialized to a new ordered mapping receiving any excess keyword arguments, defaulting to a new empty mapping of the same type. Parameters after "*" or "*identifier" are keyword-only parameters and may only be passed by keyword arguments. Parameters before "/" are positional-only parameters and may only be passed by positional arguments.
+
+함수 호출 의미론은 Calls 섹션에서 더 자세히 설명됩니다. 함수 호출은 항상 위치 인수, 키워드 인수 또는 기본값으로부터 매개변수 목록에 언급된 모든 매개변수에 값을 할당합니다. "*identifier" 형태가 있으면, 초과 위치 매개변수를 받는 튜플로 초기화되며, 기본값은 빈 튜플입니다. "**identifier" 형태가 있으면, 초과 키워드 인수를 받는 새로운 정렬된 매핑으로 초기화되며, 기본값은 동일한 유형의 새로운 빈 매핑입니다. "*" 또는 "*identifier" 이후의 매개변수는 키워드 전용 매개변수이며 키워드 인수로만 전달될 수 있습니다. "/" 이전의 매개변수는 위치 전용 매개변수이며 위치 인수로만 전달될 수 있습니다.
+
+Changed in version 3.8: The / function parameter syntax may be used to indicate positional-only parameters. See PEP 570 for details.
+
+버전 3.8에서 변경됨: / 함수 매개변수 구문을 사용하여 위치 전용 매개변수를 표시할 수 있습니다. 자세한 내용은 PEP 570을 참조하십시오.
+
+Parameters may have an annotation of the form ": expression" following the parameter name. Any parameter may have an annotation, even those of the form *identifier or **identifier. (As a special case, parameters of the form *identifier may have an annotation ": *expression".) Functions may have "return" annotation of the form "-> expression" after the parameter list. These annotations can be any valid Python expression. The presence of annotations does not change the semantics of a function. The annotation values are available as values of a dictionary keyed by the parameters' names in the __annotations__ attribute of the function object. If the annotations import from __future__ is used, annotations are preserved as strings at runtime which enables postponed evaluation. Otherwise, they are evaluated when the function definition is executed. In this case annotations may be evaluated in a different order than they appear in the source code.
+
+매개변수는 매개변수 이름 뒤에 ": expression" 형태의 주석을 가질 수 있습니다. *identifier 또는 **identifier 형태의 매개변수를 포함한 모든 매개변수가 주석을 가질 수 있습니다. (특별한 경우로, *identifier 형태의 매개변수는 ": *expression" 주석을 가질 수 있습니다.) 함수는 매개변수 목록 뒤에 "-> expression" 형태의 "반환" 주석을 가질 수 있습니다. 이러한 주석은 모든 유효한 Python 표현식이 될 수 있습니다. 주석의 존재는 함수의 의미론을 변경하지 않습니다. 주석 값은 함수 객체의 __annotations__ 속성에서 매개변수 이름으로 키가 지정된 사전의 값으로 사용할 수 있습니다. __future__에서 annotations import를 사용하는 경우, 주석은 런타임에 문자열로 보존되어 지연 평가를 가능하게 합니다. 그렇지 않으면 함수 정의가 실행될 때 평가됩니다. 이 경우 주석은 소스 코드에 나타나는 순서와 다른 순서로 평가될 수 있습니다.
+
+Changed in version 3.11: Parameters of the form "*identifier" may have an annotation ": *expression". See PEP 646.
+
+버전 3.11에서 변경됨: "*identifier" 형태의 매개변수는 ": *expression" 주석을 가질 수 있습니다. PEP 646을 참조하십시오.
+
+It is also possible to create anonymous functions (functions not bound to a name), for immediate use in expressions. This uses lambda expressions, described in section Lambdas. Note that the lambda expression is merely a shorthand for a simplified function definition; a function defined in a "def" statement can be passed around or assigned to another name just like a function defined by a lambda expression. The "def" form is actually more powerful since it allows the execution of multiple statements and annotations.
+
+표현식에서 즉시 사용하기 위해 익명 함수(이름에 바인딩되지 않은 함수)를 만들 수도 있습니다. 이는 Lambdas 섹션에서 설명하는 람다 표현식을 사용합니다. 람다 표현식은 단순히 간소화된 함수 정의를 위한 약식 표현일 뿐임에 유의하세요. "def" 문에서 정의된 함수는 람다 표현식으로 정의된 함수와 마찬가지로 전달되거나 다른 이름에 할당될 수 있습니다. "def" 형식은 실제로 여러 문장과 주석의 실행을 허용하므로 더 강력합니다.
+
+Programmer's note: Functions are first-class objects. A "def" statement executed inside a function definition defines a local function that can be returned or passed around. Free variables used in the nested function can access the local variables of the function containing the def. See section Naming and binding for details.
+
+프로그래머 참고 사항: 함수는 일급 객체입니다. 함수 정의 내에서 실행된 "def" 문은 반환되거나 전달될 수 있는 지역 함수를 정의합니다. 중첩 함수에서 사용되는 자유 변수는 def를 포함하는 함수의 지역 변수에 접근할 수 있습니다. 자세한 내용은 이름 지정 및 바인딩 섹션을 참조하십시오.
+
+See also  
+PEP 3107 - Function Annotations  
+The original specification for function annotations.
+
+PEP 484 - Type Hints  
+Definition of a standard meaning for annotations: type hints.
+
+PEP 526 - Syntax for Variable Annotations  
+Ability to type hint variable declarations, including class variables and instance variables.
+
+PEP 563 - Postponed Evaluation of Annotations  
+Support for forward references within annotations by preserving annotations in a string form at runtime instead of eager evaluation.
+
+PEP 318 - Decorators for Functions and Methods  
+Function and method decorators were introduced. Class decorators were introduced in PEP 3129.
+
+참조  
+PEP 3107 - 함수 주석  
+함수 주석에 대한 원래 명세.
+
+PEP 484 - 타입 힌트  
+주석에 대한 표준 의미 정의: 타입 힌트.
+
+PEP 526 - 변수 주석 구문  
+클래스 변수 및 인스턴스 변수를 포함한 변수 선언에 타입 힌트를 추가하는 기능.
+
+PEP 563 - 주석의 지연 평가  
+런타임에 주석을 문자열 형태로 보존하여 즉시 평가 대신 주석 내의 전방 참조 지원.
+
+PEP 318 - 함수 및 메서드 데코레이터  
+함수 및 메서드 데코레이터가 도입되었습니다. 클래스 데코레이터는 PEP 3129에서 도입되었습니다.
+
+8.8. Class definitions
+---------------------
+
+A class definition defines a class object (see section The standard type hierarchy):
+
+8.8. 클래스 정의
+---------------------
+
+클래스 정의는 클래스 객체를 정의합니다(표준 타입 계층 섹션 참조):
+
+```
+classdef    ::= [decorators] "class" classname [type_params] [inheritance] ":" suite
+inheritance ::= "(" [argument_list] ")"
+classname   ::= identifier
+```
+
+A class definition is an executable statement. The inheritance list usually gives a list of base classes (see Metaclasses for more advanced uses), so each item in the list should evaluate to a class object which allows subclassing. Classes without an inheritance list inherit, by default, from the base class object; hence,
+
+클래스 정의는 실행 가능한 문장입니다. 상속 목록은 일반적으로 기본 클래스 목록을 제공하며(더 고급 사용법은 메타클래스 참조), 목록의 각 항목은 서브클래싱을 허용하는 클래스 객체로 평가되어야 합니다. 상속 목록이 없는 클래스는 기본적으로 기본 클래스 object에서 상속받습니다. 따라서,
+
+```python
+class Foo:
+    pass
+```
+
+is equivalent to
+
+다음과 동일합니다.
+
+```python
+class Foo(object):
+    pass
+```
+
+The class's suite is then executed in a new execution frame (see Naming and binding), using a newly created local namespace and the original global namespace. (Usually, the suite contains mostly function definitions.) When the class's suite finishes execution, its execution frame is discarded but its local namespace is saved. [5] A class object is then created using the inheritance list for the base classes and the saved local namespace for the attribute dictionary. The class name is bound to this class object in the original local namespace.
+
+클래스의 스위트는 새로 생성된 지역 네임스페이스와 원래 전역 네임스페이스를 사용하여 새로운 실행 프레임에서 실행됩니다(이름 지정 및 바인딩 참조). (일반적으로 스위트는 주로 함수 정의를 포함합니다.) 클래스의 스위트 실행이 완료되면, 실행 프레임은 폐기되지만 지역 네임스페이스는 저장됩니다. [5] 그런 다음 기본 클래스에 대한 상속 목록과 속성 사전에 대한 저장된 지역 네임스페이스를 사용하여 클래스 객체가 생성됩니다. 클래스 이름은 원래 지역 네임스페이스에서 이 클래스 객체에 바인딩됩니다.
+
+The order in which attributes are defined in the class body is preserved in the new class's `__dict__`. Note that this is reliable only right after the class is created and only for classes that were defined using the definition syntax.
+
+클래스 본문에서 정의된 속성의 순서는 새 클래스의 `__dict__`에 보존됩니다. 이는 클래스가 생성된 직후와 정의 구문을 사용하여 정의된 클래스에 대해서만 신뢰할 수 있습니다.
+
+Class creation can be customized heavily using metaclasses.
+
+클래스 생성은 메타클래스를 사용하여 크게 사용자 정의할 수 있습니다.
+
+Classes can also be decorated: just like when decorating functions,
+
+클래스도 데코레이팅될 수 있습니다. 함수 데코레이팅과 마찬가지로,
+
+```python
+@f1(arg)
+@f2
+class Foo: pass
+```
+
+is roughly equivalent to
+
+다음과 대략적으로 동일합니다.
+
+```python
+class Foo: pass
+Foo = f1(arg)(f2(Foo))
+```
+
+The evaluation rules for the decorator expressions are the same as for function decorators. The result is then bound to the class name.
+
+데코레이터 표현식에 대한 평가 규칙은 함수 데코레이터와 동일합니다. 그 결과는 클래스 이름에 바인딩됩니다.
+
+Changed in version 3.9: Classes may be decorated with any valid assignment_expression. Previously, the grammar was much more restrictive; see PEP 614 for details.
+
+버전 3.9에서 변경됨: 이제 클래스는 모든 유효한 assignment_expression으로 데코레이팅될 수 있습니다. 이전에는 문법이 훨씬 더 제한적이었습니다. 자세한 내용은 PEP 614를 참조하십시오.
+
+A list of type parameters may be given in square brackets immediately after the class's name. This indicates to static type checkers that the class is generic. At runtime, the type parameters can be retrieved from the class's `__type_params__` attribute. See Generic classes for more.
+
+클래스 이름 바로 뒤에 대괄호로 타입 매개변수 목록을 지정할 수 있습니다. 이는 정적 타입 검사기에 클래스가 제네릭임을 나타냅니다. 런타임에는 클래스의 `__type_params__` 속성에서 타입 매개변수를 검색할 수 있습니다. 자세한 내용은 제네릭 클래스를 참조하십시오.
+
+Changed in version 3.12: Type parameter lists are new in Python 3.12.
+
+버전 3.12에서 변경됨: 타입 매개변수 목록은 Python 3.12에서 새롭게 추가되었습니다.
+
+Programmer's note: Variables defined in the class definition are class attributes; they are shared by instances. Instance attributes can be set in a method with `self.name = value`. Both class and instance attributes are accessible through the notation "self.name", and an instance attribute hides a class attribute with the same name when accessed in this way. Class attributes can be used as defaults for instance attributes, but using mutable values there can lead to unexpected results. Descriptors can be used to create instance variables with different implementation details.
+
+프로그래머 참고 사항: 클래스 정의에서 정의된 변수는 클래스 속성입니다. 이는 인스턴스 간에 공유됩니다. 인스턴스 속성은 메서드 내에서 `self.name = value`로 설정할 수 있습니다. 클래스 속성과 인스턴스 속성 모두 "self.name" 표기법을 통해 접근할 수 있으며, 이렇게 접근할 때 인스턴스 속성은 동일한 이름의 클래스 속성을 가립니다. 클래스 속성은 인스턴스 속성의 기본값으로 사용될 수 있지만, 가변 값을 사용하면 예상치 못한 결과가 발생할 수 있습니다. 디스크립터를 사용하여 다른 구현 세부사항을 가진 인스턴스 변수를 생성할 수 있습니다.
+
+See also  
+PEP 3115 - Metaclasses in Python 3000  
+The proposal that changed the declaration of metaclasses to the current syntax, and the semantics for how classes with metaclasses are constructed.
+
+PEP 3129 - Class Decorators  
+The proposal that added class decorators. Function and method decorators were introduced in PEP 318.
+
+참조  
+PEP 3115 - Python 3000의 메타클래스  
+메타클래스 선언을 현재 구문으로 변경하고, 메타클래스가 있는 클래스가 구성되는 방식에 대한 의미론을 제안했습니다.
+
+PEP 3129 - 클래스 데코레이터  
+클래스 데코레이터를 추가한 제안입니다. 함수 및 메서드 데코레이터는 PEP 318에서 도입되었습니다.
+
+8.9. Coroutines
+--------------
+
+Added in version 3.5.
+
+8.9. 코루틴
+--------------
+
+버전 3.5에서 추가됨.
+
+8.9.1. Coroutine function definition
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+```
+async_funcdef ::= [decorators] "async" "def" funcname "(" [parameter_list] ")"
+                  ["->" expression] ":" suite
+```
+
+Execution of Python coroutines can be suspended and resumed at many points (see coroutine). `await` expressions, `async for` and `async with` can only be used in the body of a coroutine function.
+
+Python 코루틴의 실행은 여러 지점에서 일시 중단되고 재개될 수 있습니다(코루틴 참조). `await` 표현식, `async for` 및 `async with`는 코루틴 함수의 본문에서만 사용할 수 있습니다.
+
+Functions defined with `async def` syntax are always coroutine functions, even if they do not contain `await` or `async` keywords.
+
+`async def` 구문으로 정의된 함수는 `await` 또는 `async` 키워드를 포함하지 않더라도 항상 코루틴 함수입니다.
+
+It is a SyntaxError to use a `yield from` expression inside the body of a coroutine function.
+
+코루틴 함수의 본문 내에서 `yield from` 표현식을 사용하는 것은 SyntaxError입니다.
+
+An example of a coroutine function:
+
+코루틴 함수의 예:
+
+```python
+async def func(param1, param2):
+    do_stuff()
+    await some_coroutine()
+```
+
+Changed in version 3.7: `await` and `async` are now keywords; previously they were only treated as such inside the body of a coroutine function.
+
+버전 3.7에서 변경됨: 이제 `await`와 `async`는 키워드입니다. 이전에는 코루틴 함수의 본문 내에서만 키워드로 취급되었습니다.
+
+8.9.2. The async for statement
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+```
+async_for_stmt ::= "async" for_stmt
+```
+
+An asynchronous iterable provides an `__aiter__` method that directly returns an asynchronous iterator, which can call asynchronous code in its `__anext__` method.
+
+비동기 이터러블은 비동기 반복자를 직접 반환하는 `__aiter__` 메서드를 제공하며, 이 반복자는 `__anext__` 메서드에서 비동기 코드를 호출할 수 있습니다.
+
+The `async for` statement allows convenient iteration over asynchronous iterables.
+
+`async for` 문은 비동기 이터러블에 대한 편리한 반복을 허용합니다.
+
+The following code:
+
+다음 코드:
+
+```python
+async for TARGET in ITER:
+    SUITE
+else:
+    SUITE2
+```
+
+Is semantically equivalent to:
+
+다음과 의미론적으로 동일합니다:
+
+```python
+iter = (ITER)
+iter = type(iter).__aiter__(iter)
+running = True
+
+while running:
+    try:
+        TARGET = await type(iter).__anext__(iter)
+    except StopAsyncIteration:
+        running = False
+    else:
+        SUITE
+else:
+    SUITE2
+```
+
+See also `__aiter__()` and `__anext__()` for details.
+
+자세한 내용은 `__aiter__()`와 `__anext__()`를 참조하십시오.
+
+It is a SyntaxError to use an `async for` statement outside the body of a coroutine function.
+
+코루틴 함수의 본문 외부에서 `async for` 문을 사용하는 것은 SyntaxError입니다.
+
+8.9.3. The async with statement
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+```
+async_with_stmt ::= "async" with_stmt
+```
+
+An asynchronous context manager is a context manager that is able to suspend execution in its enter and exit methods.
+
+비동기 컨텍스트 관리자는 enter 및 exit 메서드에서 실행을 일시 중단할 수 있는 컨텍스트 관리자입니다.
+
+The following code:
+
+다음 코드:
+
+```python
+async with EXPRESSION as TARGET:
+    SUITE
+```
+
+is semantically equivalent to:
+
+다음과 의미론적으로 동일합니다:
+
+```python
+manager = (EXPRESSION)
+aenter = type(manager).__aenter__
+aexit = type(manager).__aexit__
+value = await aenter(manager)
+hit_except = False
+
+try:
+    TARGET = value
+    SUITE
+except:
+    hit_except = True
+    if not await aexit(manager, *sys.exc_info()):
+        raise
+finally:
+    if not hit_except:
+        await aexit(manager, None, None, None)
+```
+
+See also `__aenter__()` and `__aexit__()` for details.
+
+자세한 내용은 `__aenter__()`와 `__aexit__()`를 참조하십시오.
+
+It is a SyntaxError to use an `async with` statement outside the body of a coroutine function.
+
+코루틴 함수의 본문 외부에서 `async with` 문을 사용하는 것은 SyntaxError입니다.
+
+See also  
+PEP 492 - Coroutines with async and await syntax  
+The proposal that made coroutines a proper standalone concept in Python, and added supporting syntax.
+
+참조  
+PEP 492 - async 및 await 구문을 사용한 코루틴  
+코루틴을 Python에서 적절한 독립 개념으로 만들고 지원하는 구문을 추가한 제안입니다.
+
+8.10. Type parameter lists
+------------------------
+
+Added in version 3.12.
+
+Changed in version 3.13: Support for default values was added (see PEP 696).
+
+8.10. 타입 매개변수 목록
+------------------------
+
+버전 3.12에서 추가됨.
+
+버전 3.13에서 변경됨: 기본값 지원이 추가되었습니다(PEP 696 참조).
+
+```
+type_params  ::= "[" type_param ("," type_param)* "]"
+type_param   ::= typevar | typevartuple | paramspec
+typevar      ::= identifier (":" expression)? ("=" expression)?
+typevartuple ::= "*" identifier ("=" expression)?
+paramspec    ::= "**" identifier ("=" expression)?
+```
+
+Functions (including coroutines), classes and type aliases may contain a type parameter list:
+
+함수(코루틴 포함), 클래스 및 타입 별칭은 타입 매개변수 목록을 포함할 수 있습니다:
+
+```python
+def max[T](args: list[T]) -> T:
+    ...
+
+async def amax[T](args: list[T]) -> T:
+    ...
+
+class Bag[T]:
+    def __iter__(self) -> Iterator[T]:
+        ...
+
+    def add(self, arg: T) -> None:
+        ...
+
+type ListOrSet[T] = list[T] | set[T]
+```
+
+Semantically, this indicates that the function, class, or type alias is generic over a type variable. This information is primarily used by static type checkers, and at runtime, generic objects behave much like their non-generic counterparts.
+
+의미론적으로, 이는 함수, 클래스 또는 타입 별칭이 타입 변수에 대해 제네릭임을 나타냅니다. 이 정보는 주로 정적 타입 검사기에서 사용되며, 런타임에서 제네릭 객체는 비제네릭 객체와 거의 동일하게 작동합니다.
+
+Type parameters are declared in square brackets ([]) immediately after the name of the function, class, or type alias. The type parameters are accessible within the scope of the generic object, but not elsewhere. Thus, after a declaration def func[T](): pass, the name T is not available in the module scope. Below, the semantics of generic objects are described with more precision. The scope of type parameters is modeled with a special function (technically, an annotation scope) that wraps the creation of the generic object.
+
+타입 매개변수는 함수, 클래스 또는 타입 별칭 이름 바로 뒤에 대괄호([])로 선언됩니다. 타입 매개변수는 제네릭 객체의 범위 내에서만 접근 가능하며, 다른 곳에서는 접근할 수 없습니다. 따라서 def func[T](): pass와 같은 선언 후, 모듈 범위에서는 이름 T를 사용할 수 없습니다. 아래에서 제네릭 객체의 의미론이 더 정확하게 설명됩니다. 타입 매개변수의 범위는 제네릭 객체 생성을 감싸는 특수 함수(기술적으로는 어노테이션 스코프)로 모델링됩니다.
+
+Generic functions, classes, and type aliases have a __type_params__ attribute listing their type parameters.
+
+제네릭 함수, 클래스 및 타입 별칭에는 타입 매개변수를 나열하는 __type_params__ 속성이 있습니다.
+
+Type parameters come in three kinds:
+
+타입 매개변수는 세 가지 종류가 있습니다:
+
+typing.TypeVar, introduced by a plain name (e.g., T). Semantically, this represents a single type to a type checker.
+
+typing.TypeVar, 일반 이름으로 도입됨(예: T). 의미론적으로, 이는 타입 검사기에 단일 타입을 나타냅니다.
+
+typing.TypeVarTuple, introduced by a name prefixed with a single asterisk (e.g., *Ts). Semantically, this stands for a tuple of any number of types.
+
+typing.TypeVarTuple, 단일 별표로 접두사가 붙은 이름으로 도입됨(예: *Ts). 의미론적으로, 이는 임의 개수의 타입 튜플을 나타냅니다.
+
+typing.ParamSpec, introduced by a name prefixed with two asterisks (e.g., **P). Semantically, this stands for the parameters of a callable.
+
+typing.ParamSpec, 두 개의 별표로 접두사가 붙은 이름으로 도입됨(예: **P). 의미론적으로, 이는 호출 가능한 객체의 매개변수를 나타냅니다.
+
+typing.TypeVar declarations can define bounds and constraints with a colon (:) followed by an expression. A single expression after the colon indicates a bound (e.g. T: int). Semantically, this means that the typing.TypeVar can only represent types that are a subtype of this bound. A parenthesized tuple of expressions after the colon indicates a set of constraints (e.g. T: (str, bytes)). Each member of the tuple should be a type (again, this is not enforced at runtime). Constrained type variables can only take on one of the types in the list of constraints.
+
+typing.TypeVar 선언은 콜론(:) 다음에 표현식을 사용하여 경계와 제약 조건을 정의할 수 있습니다. 콜론 다음의 단일 표현식은 경계를 나타냅니다(예: T: int). 의미론적으로, 이는 typing.TypeVar가 이 경계의 하위 타입인 타입만 나타낼 수 있음을 의미합니다. 콜론 다음의 괄호로 묶인 표현식 튜플은 제약 조건 집합을 나타냅니다(예: T: (str, bytes)). 튜플의 각 구성원은 타입이어야 합니다(이 역시 런타임에는 강제되지 않음). 제약이 있는 타입 변수는 제약 목록의 타입 중 하나만 가질 수 있습니다.
+
+For typing.TypeVars declared using the type parameter list syntax, the bound and constraints are not evaluated when the generic object is created, but only when the value is explicitly accessed through the attributes __bound__ and __constraints__. To accomplish this, the bounds or constraints are evaluated in a separate annotation scope.
+
+타입 매개변수 목록 구문을 사용하여 선언된 typing.TypeVars의 경우, 경계와 제약 조건은 제네릭 객체가 생성될 때가 아니라 __bound__ 및 __constraints__ 속성을 통해 명시적으로 접근할 때만 평가됩니다. 이를 위해 경계나 제약 조건은 별도의 어노테이션 스코프에서 평가됩니다.
+
+typing.TypeVarTuples and typing.ParamSpecs cannot have bounds or constraints.
+
+typing.TypeVarTuples와 typing.ParamSpecs는 경계나 제약 조건을 가질 수 없습니다.
+
+All three flavors of type parameters can also have a default value, which is used when the type parameter is not explicitly provided. This is added by appending a single equals sign (=) followed by an expression. Like the bounds and constraints of type variables, the default value is not evaluated when the object is created, but only when the type parameter's __default__ attribute is accessed. To this end, the default value is evaluated in a separate annotation scope. If no default value is specified for a type parameter, the __default__ attribute is set to the special sentinel object typing.NoDefault.
+
+세 가지 유형의 타입 매개변수 모두 기본값을 가질 수 있으며, 이는 타입 매개변수가 명시적으로 제공되지 않을 때 사용됩니다. 이는 등호(=) 하나를 추가한 다음 표현식을 작성하여 지정합니다. 타입 변수의 경계와 제약 조건과 마찬가지로, 기본값은 객체가 생성될 때가 아니라 타입 매개변수의 __default__ 속성에 접근할 때만 평가됩니다. 이를 위해 기본값은 별도의 어노테이션 스코프에서 평가됩니다. 타입 매개변수에 기본값이 지정되지 않은 경우, __default__ 속성은 특수 센티널 객체인 typing.NoDefault로 설정됩니다.
+
+The following example indicates the full set of allowed type parameter declarations:
+
+다음 예는 허용되는 타입 매개변수 선언의 전체 집합을 보여줍니다:
+
+```python
+def overly_generic[
+   SimpleTypeVar,
+   TypeVarWithDefault = int,
+   TypeVarWithBound: int,
+   TypeVarWithConstraints: (str, bytes),
+   *SimpleTypeVarTuple = (int, float),
+   **SimpleParamSpec = (str, bytearray),
+](
+   a: SimpleTypeVar,
+   b: TypeVarWithDefault,
+   c: TypeVarWithBound,
+   d: Callable[SimpleParamSpec, TypeVarWithConstraints],
+   *e: SimpleTypeVarTuple,
+): ...
+```
+
+8.10.1. Generic functions
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Generic functions are declared as follows:
+
+8.10.1. 제네릭 함수
+~~~~~~~~~~~~~~~~~~~~~~~
+
+제네릭 함수는 다음과 같이 선언됩니다:
+
+```python
+def func[T](arg: T): ...
+```
+
+This syntax is equivalent to:
+
+이 구문은 다음과 동일합니다:
+
+```python
+annotation-def TYPE_PARAMS_OF_func():
+    T = typing.TypeVar("T")
+    def func(arg: T): ...
+    func.__type_params__ = (T,)
+    return func
+func = TYPE_PARAMS_OF_func()
+```
+
+Here annotation-def indicates an annotation scope, which is not actually bound to any name at runtime. (One other liberty is taken in the translation: the syntax does not go through attribute access on the typing module, but creates an instance of typing.TypeVar directly.)
+
+여기서 annotation-def는 어노테이션 스코프를 나타내며, 런타임에 실제로 어떤 이름에도 바인딩되지 않습니다. (번역에서 취해진 또 다른 자유는 구문이 typing 모듈의 속성 접근을 통해 가지 않고, typing.TypeVar의 인스턴스를 직접 생성한다는 것입니다.)
+
+The annotations of generic functions are evaluated within the annotation scope used for declaring the type parameters, but the function's defaults and decorators are not.
+
+제네릭 함수의 어노테이션은 타입 매개변수를 선언하는 데 사용되는 어노테이션 스코프 내에서 평가되지만, 함수의 기본값과 데코레이터는 그렇지 않습니다.
+
+The following example illustrates the scoping rules for these cases, as well as for additional flavors of type parameters:
+
+다음 예제는 이러한 경우뿐만 아니라 추가적인 타입 매개변수 종류에 대한 스코핑 규칙을 보여줍니다:
+
+```python
+@decorator
+def func[T: int, *Ts, **P](*args: *Ts, arg: Callable[P, T] = some_default):
+    ...
+```
+
+Except for the lazy evaluation of the TypeVar bound, this is equivalent to:
+
+TypeVar 경계의 지연 평가를 제외하고, 이는 다음과 동일합니다:
+
+```python
+DEFAULT_OF_arg = some_default
+
+annotation-def TYPE_PARAMS_OF_func():
+
+    annotation-def BOUND_OF_T():
+        return int
+    # In reality, BOUND_OF_T() is evaluated only on demand.
+    T = typing.TypeVar("T", bound=BOUND_OF_T())
+
+    Ts = typing.TypeVarTuple("Ts")
+    P = typing.ParamSpec("P")
+
+    def func(*args: *Ts, arg: Callable[P, T] = DEFAULT_OF_arg):
+        ...
+
+    func.__type_params__ = (T, Ts, P)
+    return func
+func = decorator(TYPE_PARAMS_OF_func())
+```
+
+The capitalized names like DEFAULT_OF_arg are not actually bound at runtime.
+
+DEFAULT_OF_arg와 같은 대문자 이름은 런타임에 실제로 바인딩되지 않습니다.
+
+8.10.2. Generic classes
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Generic classes are declared as follows:
+
+8.10.2. 제네릭 클래스
+~~~~~~~~~~~~~~~~~~~~~~~
+
+제네릭 클래스는 다음과 같이 선언됩니다:
+
+```python
+class Bag[T]: ...
+```
+
+This syntax is equivalent to:
+
+이 구문은 다음과 동일합니다:
+
+```python
+annotation-def TYPE_PARAMS_OF_Bag():
+    T = typing.TypeVar("T")
+    class Bag(typing.Generic[T]):
+        __type_params__ = (T,)
+        ...
+    return Bag
+Bag = TYPE_PARAMS_OF_Bag()
+```
+
+Here again annotation-def (not a real keyword) indicates an annotation scope, and the name TYPE_PARAMS_OF_Bag is not actually bound at runtime.
+
+여기서도 마찬가지로 annotation-def(실제 키워드가 아님)는 어노테이션 스코프를 나타내며, TYPE_PARAMS_OF_Bag 이름은 런타임에 실제로 바인딩되지 않습니다.
+
+Generic classes implicitly inherit from typing.Generic. The base classes and keyword arguments of generic classes are evaluated within the type scope for the type parameters, and decorators are evaluated outside that scope. This is illustrated by this example:
+
+제네릭 클래스는 암시적으로 typing.Generic을 상속합니다. 제네릭 클래스의 기본 클래스와 키워드 인수는 타입 매개변수에 대한 타입 스코프 내에서 평가되고, 데코레이터는 해당 스코프 외부에서 평가됩니다. 이는 다음 예제에 나와 있습니다:
+
+```python
+@decorator
+class Bag(Base[T], arg=T): ...
+```
+
+This is equivalent to:
+
+이는 다음과 동일합니다:
+
+```python
+annotation-def TYPE_PARAMS_OF_Bag():
+    T = typing.TypeVar("T")
+    class Bag(Base[T], typing.Generic[T], arg=T):
+        __type_params__ = (T,)
+        ...
+    return Bag
+Bag = decorator(TYPE_PARAMS_OF_Bag())
+```
+
+8.10.3. Generic type aliases
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The type statement can also be used to create a generic type alias:
+
+8.10.3. 제네릭 타입 별칭
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+type 문을 사용하여 제네릭 타입 별칭을 생성할 수도 있습니다:
+
+```python
+type ListOrSet[T] = list[T] | set[T]
+```
+
+Except for the lazy evaluation of the value, this is equivalent to:
+
+값의 지연 평가를 제외하고, 이는 다음과 동일합니다:
+
+```python
+annotation-def TYPE_PARAMS_OF_ListOrSet():
+    T = typing.TypeVar("T")
+
+    annotation-def VALUE_OF_ListOrSet():
+        return list[T] | set[T]
+    # In reality, the value is lazily evaluated
+    return typing.TypeAliasType("ListOrSet", VALUE_OF_ListOrSet(), type_params=(T,))
+ListOrSet = TYPE_PARAMS_OF_ListOrSet()
+```
+
+Here, annotation-def (not a real keyword) indicates an annotation scope. The capitalized names like TYPE_PARAMS_OF_ListOrSet are not actually bound at runtime.
+
+여기서 annotation-def(실제 키워드가 아님)는 어노테이션 스코프를 나타냅니다. TYPE_PARAMS_OF_ListOrSet와 같은 대문자 이름은 런타임에 실제로 바인딩되지 않습니다.
+

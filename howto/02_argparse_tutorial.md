@@ -1,657 +1,629 @@
-Argparse Tutorial
-author:
-Tshepang Mbambo
+# Command-Line Parsing with argparse
 
-This tutorial is intended to be a gentle introduction to argparse, the recommended command-line parsing module in the Python standard library.
+# argparse를 이용한 명령줄 인자 파싱
 
-Note The standard library includes two other libraries directly related to command-line parameter processing: the lower level optparse module (which may require more code to configure for a given application, but also allows an application to request behaviors that argparse doesn’t support), and the very low level getopt (which specifically serves as an equivalent to the getopt() family of functions available to C programmers). While neither of those modules is covered directly in this guide, many of the core concepts in argparse first originated in optparse, so some aspects of this tutorial will also be relevant to optparse users.
-Concepts¶
-Let’s show the sort of functionality that we are going to explore in this introductory tutorial by making use of the ls command:
+## Introduction
 
-ls
-cpython  devguide  prog.py  pypy  rm-unused-function.patch
-ls pypy
-ctypes_configure  demo  dotviewer  include  lib_pypy  lib-python ...
-ls -l
-total 20
-drwxr-xr-x 19 wena wena 4096 Feb 18 18:51 cpython
-drwxr-xr-x  4 wena wena 4096 Feb  8 12:04 devguide
--rwxr-xr-x  1 wena wena  535 Feb 19 00:05 prog.py
-drwxr-xr-x 14 wena wena 4096 Feb  7 00:59 pypy
--rw-r--r--  1 wena wena  741 Feb 18 01:01 rm-unused-function.patch
-ls --help
-Usage: ls [OPTION]... [FILE]...
-List information about the FILEs (the current directory by default).
-Sort entries alphabetically if none of -cftuvSUX nor --sort is specified.
-...
-A few concepts we can learn from the four commands:
+The `argparse` module is the recommended command-line parsing module in the Python standard library. It makes it easy to write user-friendly command-line interfaces, automatically generating help and usage messages and handling various argument types. This guide covers how to use `argparse` effectively in your Python programs.
 
-The ls command is useful when run without any options at all. It defaults to displaying the contents of the current directory.
+## 소개
 
-If we want beyond what it provides by default, we tell it a bit more. In this case, we want it to display a different directory, pypy. What we did is specify what is known as a positional argument. It’s named so because the program should know what to do with the value, solely based on where it appears on the command line. This concept is more relevant to a command like cp, whose most basic usage is cp SRC DEST. The first position is what you want copied, and the second position is where you want it copied to.
+`argparse` 모듈은 Python 표준 라이브러리에서 권장하는 명령줄 파싱 모듈입니다. 이 모듈을 사용하면 사용자 친화적인 명령줄 인터페이스를 쉽게 작성할 수 있으며, 도움말과 사용 메시지를 자동으로 생성하고 다양한 인자 유형을 처리합니다. 이 가이드에서는 Python 프로그램에서 `argparse`를 효과적으로 사용하는 방법을 다룹니다.
 
-Now, say we want to change behaviour of the program. In our example, we display more info for each file instead of just showing the file names. The -l in that case is known as an optional argument.
+## Basic Usage
 
-That’s a snippet of the help text. It’s very useful in that you can come across a program you have never used before, and can figure out how it works simply by reading its help text.
+The most basic example of using `argparse` involves just a few steps:
 
-The basics
-Let us start with a very simple example which does (almost) nothing:
-
+```python
 import argparse
-parser = argparse.ArgumentParser()
-parser.parse_args()
-Following is a result of running the code:
 
-python prog.py
-python prog.py --help
-usage: prog.py [-h]
+# Create an argument parser
+parser = argparse.ArgumentParser(description='A simple example program')
 
-options:
-  -h, --help  show this help message and exit
-python prog.py --verbose
-usage: prog.py [-h]
-prog.py: error: unrecognized arguments: --verbose
-python prog.py foo
-usage: prog.py [-h]
-prog.py: error: unrecognized arguments: foo
-Here is what is happening:
+# Add arguments
+parser.add_argument('--number', type=int, default=10, help='A number to use')
 
-Running the script without any options results in nothing displayed to stdout. Not so useful.
-
-The second one starts to display the usefulness of the argparse module. We have done almost nothing, but already we get a nice help message.
-
-The --help option, which can also be shortened to -h, is the only option we get for free (i.e. no need to specify it). Specifying anything else results in an error. But even then, we do get a useful usage message, also for free.
-
-Introducing Positional arguments
-An example:
-
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("echo")
+# Parse the arguments
 args = parser.parse_args()
-print(args.echo)
-And running the code:
 
-python prog.py
-usage: prog.py [-h] echo
-prog.py: error: the following arguments are required: echo
-python prog.py --help
-usage: prog.py [-h] echo
+# Use the arguments
+print(f"The number is: {args.number}")
+```
 
-positional arguments:
-  echo
+When you run this program, you can provide the `--number` argument:
 
-options:
-  -h, --help  show this help message and exit
-python prog.py foo
-foo
-Here is what’s happening:
+```
+$ python program.py --number 42
+The number is: 42
+```
 
-We’ve added the add_argument() method, which is what we use to specify which command-line options the program is willing to accept. In this case, I’ve named it echo so that it’s in line with its function.
+If you run it without arguments, it uses the default:
 
-Calling our program now requires us to specify an option.
+```
+$ python program.py
+The number is: 10
+```
 
-The parse_args() method actually returns some data from the options specified, in this case, echo.
+And if you use the `--help` flag, it shows a helpful message:
 
-The variable is some form of ‘magic’ that argparse performs for free (i.e. no need to specify which variable that value is stored in). You will also notice that its name matches the string argument given to the method, echo.
+```
+$ python program.py --help
+usage: program.py [-h] [--number NUMBER]
 
-Note however that, although the help display looks nice and all, it currently is not as helpful as it can be. For example we see that we got echo as a positional argument, but we don’t know what it does, other than by guessing or by reading the source code. So, let’s make it a bit more useful:
-
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("echo", help="echo the string you use here")
-args = parser.parse_args()
-print(args.echo)
-And we get:
-
-python prog.py -h
-usage: prog.py [-h] echo
-
-positional arguments:
-  echo        echo the string you use here
-
-options:
-  -h, --help  show this help message and exit
-Now, how about doing something even more useful:
-
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("square", help="display a square of a given number")
-args = parser.parse_args()
-print(args.square**2)
-Following is a result of running the code:
-
-python prog.py 4
-Traceback (most recent call last):
-  File "prog.py", line 5, in <module>
-    print(args.square**2)
-TypeError: unsupported operand type(s) for ** or pow(): 'str' and 'int'
-That didn’t go so well. That’s because argparse treats the options we give it as strings, unless we tell it otherwise. So, let’s tell argparse to treat that input as an integer:
-
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("square", help="display a square of a given number",
-                    type=int)
-args = parser.parse_args()
-print(args.square**2)
-Following is a result of running the code:
-
-python prog.py 4
-16
-python prog.py four
-usage: prog.py [-h] square
-prog.py: error: argument square: invalid int value: 'four'
-That went well. The program now even helpfully quits on bad illegal input before proceeding.
-
-Introducing Optional arguments
-So far we have been playing with positional arguments. Let us have a look on how to add optional ones:
-
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("--verbosity", help="increase output verbosity")
-args = parser.parse_args()
-if args.verbosity:
-    print("verbosity turned on")
-And the output:
-
-python prog.py --verbosity 1
-verbosity turned on
-python prog.py
-python prog.py --help
-usage: prog.py [-h] [--verbosity VERBOSITY]
-
-options:
-  -h, --help            show this help message and exit
-  --verbosity VERBOSITY
-                        increase output verbosity
-python prog.py --verbosity
-usage: prog.py [-h] [--verbosity VERBOSITY]
-prog.py: error: argument --verbosity: expected one argument
-Here is what is happening:
-
-The program is written so as to display something when --verbosity is specified and display nothing when not.
-
-To show that the option is actually optional, there is no error when running the program without it. Note that by default, if an optional argument isn’t used, the relevant variable, in this case args.verbosity, is given None as a value, which is the reason it fails the truth test of the if statement.
-
-The help message is a bit different.
-
-When using the --verbosity option, one must also specify some value, any value.
-
-The above example accepts arbitrary integer values for --verbosity, but for our simple program, only two values are actually useful, True or False. Let’s modify the code accordingly:
-
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("--verbose", help="increase output verbosity",
-                    action="store_true")
-args = parser.parse_args()
-if args.verbose:
-    print("verbosity turned on")
-And the output:
-
-python prog.py --verbose
-verbosity turned on
-python prog.py --verbose 1
-usage: prog.py [-h] [--verbose]
-prog.py: error: unrecognized arguments: 1
-python prog.py --help
-usage: prog.py [-h] [--verbose]
-
-options:
-  -h, --help  show this help message and exit
-  --verbose   increase output verbosity
-Here is what is happening:
-
-The option is now more of a flag than something that requires a value. We even changed the name of the option to match that idea. Note that we now specify a new keyword, action, and give it the value "store_true". This means that, if the option is specified, assign the value True to args.verbose. Not specifying it implies False.
-
-It complains when you specify a value, in true spirit of what flags actually are.
-
-Notice the different help text.
-
-Short options
-If you are familiar with command line usage, you will notice that I haven’t yet touched on the topic of short versions of the options. It’s quite simple:
-
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("-v", "--verbose", help="increase output verbosity",
-                    action="store_true")
-args = parser.parse_args()
-if args.verbose:
-    print("verbosity turned on")
-And here goes:
-
-python prog.py -v
-verbosity turned on
-python prog.py --help
-usage: prog.py [-h] [-v]
-
-options:
-  -h, --help     show this help message and exit
-  -v, --verbose  increase output verbosity
-Note that the new ability is also reflected in the help text.
-
-Combining Positional and Optional arguments
-Our program keeps growing in complexity:
-
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("square", type=int,
-                    help="display a square of a given number")
-parser.add_argument("-v", "--verbose", action="store_true",
-                    help="increase output verbosity")
-args = parser.parse_args()
-answer = args.square**2
-if args.verbose:
-    print(f"the square of {args.square} equals {answer}")
-else:
-    print(answer)
-And now the output:
-
-python prog.py
-usage: prog.py [-h] [-v] square
-prog.py: error: the following arguments are required: square
-python prog.py 4
-16
-python prog.py 4 --verbose
-the square of 4 equals 16
-python prog.py --verbose 4
-the square of 4 equals 16
-We’ve brought back a positional argument, hence the complaint.
-
-Note that the order does not matter.
-
-How about we give this program of ours back the ability to have multiple verbosity values, and actually get to use them:
-
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("square", type=int,
-                    help="display a square of a given number")
-parser.add_argument("-v", "--verbosity", type=int,
-                    help="increase output verbosity")
-args = parser.parse_args()
-answer = args.square**2
-if args.verbosity == 2:
-    print(f"the square of {args.square} equals {answer}")
-elif args.verbosity == 1:
-    print(f"{args.square}^2 == {answer}")
-else:
-    print(answer)
-And the output:
-
-python prog.py 4
-16
-python prog.py 4 -v
-usage: prog.py [-h] [-v VERBOSITY] square
-prog.py: error: argument -v/--verbosity: expected one argument
-python prog.py 4 -v 1
-4^2 == 16
-python prog.py 4 -v 2
-the square of 4 equals 16
-python prog.py 4 -v 3
-16
-These all look good except the last one, which exposes a bug in our program. Let’s fix it by restricting the values the --verbosity option can accept:
-
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("square", type=int,
-                    help="display a square of a given number")
-parser.add_argument("-v", "--verbosity", type=int, choices=[0, 1, 2],
-                    help="increase output verbosity")
-args = parser.parse_args()
-answer = args.square**2
-if args.verbosity == 2:
-    print(f"the square of {args.square} equals {answer}")
-elif args.verbosity == 1:
-    print(f"{args.square}^2 == {answer}")
-else:
-    print(answer)
-And the output:
-
-python prog.py 4 -v 3
-usage: prog.py [-h] [-v {0,1,2}] square
-prog.py: error: argument -v/--verbosity: invalid choice: 3 (choose from 0, 1, 2)
-python prog.py 4 -h
-usage: prog.py [-h] [-v {0,1,2}] square
-
-positional arguments:
-  square                display a square of a given number
-
-options:
-  -h, --help            show this help message and exit
-  -v, --verbosity {0,1,2}
-                        increase output verbosity
-Note that the change also reflects both in the error message as well as the help string.
-
-Now, let’s use a different approach of playing with verbosity, which is pretty common. It also matches the way the CPython executable handles its own verbosity argument (check the output of python --help):
-
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("square", type=int,
-                    help="display the square of a given number")
-parser.add_argument("-v", "--verbosity", action="count",
-                    help="increase output verbosity")
-args = parser.parse_args()
-answer = args.square**2
-if args.verbosity == 2:
-    print(f"the square of {args.square} equals {answer}")
-elif args.verbosity == 1:
-    print(f"{args.square}^2 == {answer}")
-else:
-    print(answer)
-We have introduced another action, “count”, to count the number of occurrences of specific options.
-
-python prog.py 4
-16
-python prog.py 4 -v
-4^2 == 16
-python prog.py 4 -vv
-the square of 4 equals 16
-python prog.py 4 --verbosity --verbosity
-the square of 4 equals 16
-python prog.py 4 -v 1
-usage: prog.py [-h] [-v] square
-prog.py: error: unrecognized arguments: 1
-python prog.py 4 -h
-usage: prog.py [-h] [-v] square
-
-positional arguments:
-  square           display a square of a given number
+A simple example program
 
 options:
   -h, --help       show this help message and exit
-  -v, --verbosity  increase output verbosity
-python prog.py 4 -vvv
-16
-Yes, it’s now more of a flag (similar to action="store_true") in the previous version of our script. That should explain the complaint.
+  --number NUMBER  A number to use
+```
 
-It also behaves similar to “store_true” action.
+## 기본 사용법
 
-Now here’s a demonstration of what the “count” action gives. You’ve probably seen this sort of usage before.
+`argparse`의 가장 기본적인 사용 예제는 다음과 같은 몇 가지 단계로 이루어집니다:
 
-And if you don’t specify the -v flag, that flag is considered to have None value.
-
-As should be expected, specifying the long form of the flag, we should get the same output.
-
-Sadly, our help output isn’t very informative on the new ability our script has acquired, but that can always be fixed by improving the documentation for our script (e.g. via the help keyword argument).
-
-That last output exposes a bug in our program.
-
-Let’s fix:
-
+```python
 import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("square", type=int,
-                    help="display a square of a given number")
-parser.add_argument("-v", "--verbosity", action="count",
-                    help="increase output verbosity")
+
+# 인자 파서 생성
+parser = argparse.ArgumentParser(description='간단한 예제 프로그램')
+
+# 인자 추가
+parser.add_argument('--number', type=int, default=10, help='사용할 숫자')
+
+# 인자 파싱
 args = parser.parse_args()
-answer = args.square**2
 
-# bugfix: replace == with >=
-if args.verbosity >= 2:
-    print(f"the square of {args.square} equals {answer}")
-elif args.verbosity >= 1:
-    print(f"{args.square}^2 == {answer}")
-else:
-    print(answer)
-And this is what it gives:
+# 인자 사용
+print(f"숫자는: {args.number}")
+```
 
-python prog.py 4 -vvv
-the square of 4 equals 16
-python prog.py 4 -vvvv
-the square of 4 equals 16
-python prog.py 4
-Traceback (most recent call last):
-  File "prog.py", line 11, in <module>
-    if args.verbosity >= 2:
-TypeError: '>=' not supported between instances of 'NoneType' and 'int'
-First output went well, and fixes the bug we had before. That is, we want any value >= 2 to be as verbose as possible.
+이 프로그램을 실행할 때 `--number` 인자를 제공할 수 있습니다:
 
-Third output not so good.
+```
+$ python program.py --number 42
+숫자는: 42
+```
 
-Let’s fix that bug:
+인자 없이 실행하면 기본값을 사용합니다:
 
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("square", type=int,
-                    help="display a square of a given number")
-parser.add_argument("-v", "--verbosity", action="count", default=0,
-                    help="increase output verbosity")
-args = parser.parse_args()
-answer = args.square**2
-if args.verbosity >= 2:
-    print(f"the square of {args.square} equals {answer}")
-elif args.verbosity >= 1:
-    print(f"{args.square}^2 == {answer}")
-else:
-    print(answer)
-We’ve just introduced yet another keyword, default. We’ve set it to 0 in order to make it comparable to the other int values. Remember that by default, if an optional argument isn’t specified, it gets the None value, and that cannot be compared to an int value (hence the TypeError exception).
+```
+$ python program.py
+숫자는: 10
+```
 
-And:
+그리고 `--help` 플래그를 사용하면 도움말 메시지가 표시됩니다:
 
-python prog.py 4
-16
-You can go quite far just with what we’ve learned so far, and we have only scratched the surface. The argparse module is very powerful, and we’ll explore a bit more of it before we end this tutorial.
+```
+$ python program.py --help
+usage: program.py [-h] [--number NUMBER]
 
-Getting a little more advanced
-What if we wanted to expand our tiny program to perform other powers, not just squares:
-
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("x", type=int, help="the base")
-parser.add_argument("y", type=int, help="the exponent")
-parser.add_argument("-v", "--verbosity", action="count", default=0)
-args = parser.parse_args()
-answer = args.x**args.y
-if args.verbosity >= 2:
-    print(f"{args.x} to the power {args.y} equals {answer}")
-elif args.verbosity >= 1:
-    print(f"{args.x}^{args.y} == {answer}")
-else:
-    print(answer)
-Output:
-
-python prog.py
-usage: prog.py [-h] [-v] x y
-prog.py: error: the following arguments are required: x, y
-python prog.py -h
-usage: prog.py [-h] [-v] x y
-
-positional arguments:
-  x                the base
-  y                the exponent
+간단한 예제 프로그램
 
 options:
-  -h, --help       show this help message and exit
-  -v, --verbosity
-python prog.py 4 2 -v
-4^2 == 16
-Notice that so far we’ve been using verbosity level to change the text that gets displayed. The following example instead uses verbosity level to display more text instead:
+  -h, --help       도움말 표시 및 종료
+  --number NUMBER  사용할 숫자
+```
 
+## Positional and Optional Arguments
+
+`argparse` supports two main types of arguments:
+
+1. **Positional arguments**: Required arguments that don't use a prefix like `--`
+2. **Optional arguments**: Arguments that are prefixed with `--` or `-` and are optional by default
+
+### Positional Arguments
+
+```python
+parser.add_argument('filename', help='File to process')
+```
+
+### Optional Arguments
+
+```python
+parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose output')
+```
+
+Here's an example combining both:
+
+```python
 import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("x", type=int, help="the base")
-parser.add_argument("y", type=int, help="the exponent")
-parser.add_argument("-v", "--verbosity", action="count", default=0)
+
+parser = argparse.ArgumentParser(description='Process a file')
+parser.add_argument('filename', help='File to process')
+parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose output')
+
 args = parser.parse_args()
-answer = args.x**args.y
-if args.verbosity >= 2:
-    print(f"Running '{__file__}'")
-if args.verbosity >= 1:
-    print(f"{args.x}^{args.y} == ", end="")
-print(answer)
-Output:
 
-python prog.py 4 2
-16
-python prog.py 4 2 -v
-4^2 == 16
-python prog.py 4 2 -vv
-Running 'prog.py'
-4^2 == 16
-Specifying ambiguous arguments
-When there is ambiguity in deciding whether an argument is positional or for an argument, -- can be used to tell parse_args() that everything after that is a positional argument:
+print(f"Processing file: {args.filename}")
+if args.verbose:
+    print("Verbose mode enabled")
+```
 
->>>
-parser = argparse.ArgumentParser(prog='PROG')
-parser.add_argument('-n', nargs='+')
-parser.add_argument('args', nargs='*')
+## 위치 인자와 선택적 인자
 
-# ambiguous, so parse_args assumes it's an option
-parser.parse_args(['-f'])
-usage: PROG [-h] [-n N [N ...]] [args ...]
-PROG: error: unrecognized arguments: -f
+`argparse`는 두 가지 주요 유형의 인자를 지원합니다:
 
-parser.parse_args(['--', '-f'])
-Namespace(args=['-f'], n=None)
+1. **위치 인자(Positional arguments)**: `--`와 같은 접두사를 사용하지 않는 필수 인자
+2. **선택적 인자(Optional arguments)**: `--` 또는 `-`로 시작하며 기본적으로 선택 사항인 인자
 
-# ambiguous, so the -n option greedily accepts arguments
-parser.parse_args(['-n', '1', '2', '3'])
-Namespace(args=[], n=['1', '2', '3'])
+### 위치 인자
 
-parser.parse_args(['-n', '1', '--', '2', '3'])
-Namespace(args=['2', '3'], n=['1'])
-Conflicting options
-So far, we have been working with two methods of an argparse.ArgumentParser instance. Let’s introduce a third one, add_mutually_exclusive_group(). It allows for us to specify options that conflict with each other. Let’s also change the rest of the program so that the new functionality makes more sense: we’ll introduce the --quiet option, which will be the opposite of the --verbose one:
+```python
+parser.add_argument('filename', help='처리할 파일')
+```
 
+### 선택적 인자
+
+```python
+parser.add_argument('--verbose', '-v', action='store_true', help='상세 출력 활성화')
+```
+
+다음은 두 가지를 모두 결합한 예제입니다:
+
+```python
 import argparse
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description='파일 처리')
+parser.add_argument('filename', help='처리할 파일')
+parser.add_argument('--verbose', '-v', action='store_true', help='상세 출력 활성화')
+
+args = parser.parse_args()
+
+print(f"파일 처리 중: {args.filename}")
+if args.verbose:
+    print("상세 모드 활성화됨")
+```
+
+## Argument Types and Actions
+
+`argparse` allows you to specify the type of arguments and how they should be handled:
+
+### Types
+
+You can specify a type for arguments:
+
+```python
+parser.add_argument('--count', type=int, help='Number of times to repeat')
+parser.add_argument('--temperature', type=float, help='Temperature in Celsius')
+parser.add_argument('--names', type=str, nargs='+', help='List of names')
+```
+
+### Actions
+
+Actions determine what happens when an argument is encountered:
+
+- `store` - Default action, stores the value
+- `store_true` / `store_false` - Stores True/False when the flag is present/absent
+- `append` - Appends the value to a list
+- `count` - Counts the number of times the argument appears
+
+```python
+parser.add_argument('--verbose', action='store_true', help='Enable verbose mode')
+parser.add_argument('--quiet', action='store_false', dest='verbose', help='Disable verbose mode')
+parser.add_argument('--file', action='append', help='Add a file (can be used multiple times)')
+parser.add_argument('-v', action='count', default=0, help='Increase verbosity')
+```
+
+## 인자 타입과 액션
+
+`argparse`를 사용하면 인자의 유형과 처리 방법을 지정할 수 있습니다:
+
+### 타입
+
+인자의 타입을 지정할 수 있습니다:
+
+```python
+parser.add_argument('--count', type=int, help='반복할 횟수')
+parser.add_argument('--temperature', type=float, help='섭씨 온도')
+parser.add_argument('--names', type=str, nargs='+', help='이름 목록')
+```
+
+### 액션
+
+액션은 인자가 발견될 때 어떤 일이 발생하는지 결정합니다:
+
+- `store` - 기본 액션, 값을 저장
+- `store_true` / `store_false` - 플래그가 있을 때/없을 때 True/False 저장
+- `append` - 값을 리스트에 추가
+- `count` - 인자가 나타난 횟수를 계산
+
+```python
+parser.add_argument('--verbose', action='store_true', help='상세 모드 활성화')
+parser.add_argument('--quiet', action='store_false', dest='verbose', help='상세 모드 비활성화')
+parser.add_argument('--file', action='append', help='파일 추가 (여러 번 사용 가능)')
+parser.add_argument('-v', action='count', default=0, help='상세도 증가')
+```
+
+## Mutually Exclusive Groups
+
+Sometimes you want to ensure that certain arguments can't be used together. Use mutually exclusive groups for this:
+
+```python
+import argparse
+
+parser = argparse.ArgumentParser(description='Volume control')
 group = parser.add_mutually_exclusive_group()
-group.add_argument("-v", "--verbose", action="store_true")
-group.add_argument("-q", "--quiet", action="store_true")
-parser.add_argument("x", type=int, help="the base")
-parser.add_argument("y", type=int, help="the exponent")
+group.add_argument('--increase', action='store_true', help='Increase volume')
+group.add_argument('--decrease', action='store_true', help='Decrease volume')
+
 args = parser.parse_args()
-answer = args.x**args.y
 
-if args.quiet:
-    print(answer)
-elif args.verbose:
-    print(f"{args.x} to the power {args.y} equals {answer}")
+if args.increase:
+    print("Increasing volume")
+elif args.decrease:
+    print("Decreasing volume")
 else:
-    print(f"{args.x}^{args.y} == {answer}")
-Our program is now simpler, and we’ve lost some functionality for the sake of demonstration. Anyways, here’s the output:
+    print("Volume unchanged")
+```
 
-python prog.py 4 2
-4^2 == 16
-python prog.py 4 2 -q
-16
-python prog.py 4 2 -v
-4 to the power 2 equals 16
-python prog.py 4 2 -vq
-usage: prog.py [-h] [-v | -q] x y
-prog.py: error: argument -q/--quiet: not allowed with argument -v/--verbose
-python prog.py 4 2 -v --quiet
-usage: prog.py [-h] [-v | -q] x y
-prog.py: error: argument -q/--quiet: not allowed with argument -v/--verbose
-That should be easy to follow. I’ve added that last output so you can see the sort of flexibility you get, i.e. mixing long form options with short form ones.
+If you try to use both flags, you'll get an error:
 
-Before we conclude, you probably want to tell your users the main purpose of your program, just in case they don’t know:
+```
+$ python volume.py --increase --decrease
+usage: volume.py [-h] [--increase | --decrease]
+volume.py: error: argument --decrease: not allowed with argument --increase
+```
 
+## 상호 배타적 그룹
+
+때로는 특정 인자들이 함께 사용되지 않도록 해야 할 때가 있습니다. 이를 위해 상호 배타적 그룹을 사용하세요:
+
+```python
 import argparse
 
-parser = argparse.ArgumentParser(description="calculate X to the power of Y")
+parser = argparse.ArgumentParser(description='볼륨 제어')
 group = parser.add_mutually_exclusive_group()
-group.add_argument("-v", "--verbose", action="store_true")
-group.add_argument("-q", "--quiet", action="store_true")
-parser.add_argument("x", type=int, help="the base")
-parser.add_argument("y", type=int, help="the exponent")
-args = parser.parse_args()
-answer = args.x**args.y
+group.add_argument('--increase', action='store_true', help='볼륨 증가')
+group.add_argument('--decrease', action='store_true', help='볼륨 감소')
 
-if args.quiet:
-    print(answer)
-elif args.verbose:
-    print(f"{args.x} to the power {args.y} equals {answer}")
+args = parser.parse_args()
+
+if args.increase:
+    print("볼륨 증가 중")
+elif args.decrease:
+    print("볼륨 감소 중")
 else:
-    print(f"{args.x}^{args.y} == {answer}")
-Note that slight difference in the usage text. Note the [-v | -q], which tells us that we can either use -v or -q, but not both at the same time:
+    print("볼륨 변경 없음")
+```
 
-python prog.py --help
-usage: prog.py [-h] [-v | -q] x y
+두 플래그를 모두 사용하려고 하면 오류가 발생합니다:
 
-calculate X to the power of Y
+```
+$ python volume.py --increase --decrease
+usage: volume.py [-h] [--increase | --decrease]
+volume.py: error: argument --decrease: not allowed with argument --increase
+```
 
-positional arguments:
-  x              the base
-  y              the exponent
+## Subcommands
 
-options:
-  -h, --help     show this help message and exit
-  -v, --verbose
-  -q, --quiet
-How to translate the argparse output
-The output of the argparse module such as its help text and error messages are all made translatable using the gettext module. This allows applications to easily localize messages produced by argparse. See also Internationalizing your programs and modules.
+For complex CLI applications, you might want to use subcommands, similar to what tools like `git` use (e.g., `git commit`, `git push`):
 
-For instance, in this argparse output:
-
-python prog.py --help
-usage: prog.py [-h] [-v | -q] x y
-
-calculate X to the power of Y
-
-positional arguments:
-  x              the base
-  y              the exponent
-
-options:
-  -h, --help     show this help message and exit
-  -v, --verbose
-  -q, --quiet
-The strings usage:, positional arguments:, options: and show this help message and exit are all translatable.
-
-In order to translate these strings, they must first be extracted into a .po file. For example, using Babel, run this command:
-
-pybabel extract -o messages.po /usr/lib/python3.12/argparse.py
-This command will extract all translatable strings from the argparse module and output them into a file named messages.po. This command assumes that your Python installation is in /usr/lib.
-
-You can find out the location of the argparse module on your system using this script:
-
-import argparse
-print(argparse.__file__)
-Once the messages in the .po file are translated and the translations are installed using gettext, argparse will be able to display the translated messages.
-
-To translate your own strings in the argparse output, use gettext.
-
-Custom type converters
-The argparse module allows you to specify custom type converters for your command-line arguments. This allows you to modify user input before it’s stored in the argparse.Namespace. This can be useful when you need to pre-process the input before it is used in your program.
-
-When using a custom type converter, you can use any callable that takes a single string argument (the argument value) and returns the converted value. However, if you need to handle more complex scenarios, you can use a custom action class with the action parameter instead.
-
-For example, let’s say you want to handle arguments with different prefixes and process them accordingly:
-
+```python
 import argparse
 
-parser = argparse.ArgumentParser(prefix_chars='-+')
+parser = argparse.ArgumentParser(description='File manager')
+subparsers = parser.add_subparsers(dest='command', help='Commands')
 
-parser.add_argument('-a', metavar='<value>', action='append',
-                    type=lambda x: ('-', x))
-parser.add_argument('+a', metavar='<value>', action='append',
-                    type=lambda x: ('+', x))
+# Create command
+create_parser = subparsers.add_parser('create', help='Create a file')
+create_parser.add_argument('filename', help='Name of the file to create')
+create_parser.add_argument('--content', help='Content to write to the file')
+
+# Delete command
+delete_parser = subparsers.add_parser('delete', help='Delete a file')
+delete_parser.add_argument('filename', help='Name of the file to delete')
+delete_parser.add_argument('--force', action='store_true', help='Force deletion')
 
 args = parser.parse_args()
-print(args)
-Output:
 
-python prog.py -a value1 +a value2
-Namespace(a=[('-', 'value1'), ('+', 'value2')])
-In this example, we:
+if args.command == 'create':
+    print(f"Creating file: {args.filename}")
+    if args.content:
+        print(f"With content: {args.content}")
+elif args.command == 'delete':
+    print(f"Deleting file: {args.filename}")
+    if args.force:
+        print("With force option")
+```
 
-Created a parser with custom prefix characters using the prefix_chars parameter.
+Now you can use the program with subcommands:
 
-Defined two arguments, -a and +a, which used the type parameter to create custom type converters to store the value in a tuple with the prefix.
+```
+$ python filemanager.py create myfile.txt --content "Hello, World!"
+Creating file: myfile.txt
+With content: Hello, World!
 
-Without the custom type converters, the arguments would have treated the -a and +a as the same argument, which would have been undesirable. By using custom type converters, we were able to differentiate between the two arguments.
+$ python filemanager.py delete myfile.txt --force
+Deleting file: myfile.txt
+With force option
+```
 
-Conclusion
-The argparse module offers a lot more than shown here. Its docs are quite detailed and thorough, and full of examples. Having gone through this tutorial, you should easily digest them without feeling overwhelmed.
+## 하위 명령어
 
-© Copyright 2001-2025, Python Software Foundation.
-This page is licensed under the Python Software Foundation License Version 2.
-Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
-See History and License for more information.
+복잡한 CLI 애플리케이션의 경우, `git`과 같은 도구가 사용하는 것과 유사한 하위 명령어(예: `git commit`, `git push`)를 사용하고 싶을 수 있습니다:
 
-The Python Software Foundation is a non-profit corporation. Please donate.
+```python
+import argparse
 
-Last updated on Mar 17, 2025 (11:46 UTC). Found a bug?
-Created using Sphinx 8.2.3.
+parser = argparse.ArgumentParser(description='파일 관리자')
+subparsers = parser.add_subparsers(dest='command', help='명령어')
+
+# 생성 명령어
+create_parser = subparsers.add_parser('create', help='파일 생성')
+create_parser.add_argument('filename', help='생성할 파일 이름')
+create_parser.add_argument('--content', help='파일에 쓸 내용')
+
+# 삭제 명령어
+delete_parser = subparsers.add_parser('delete', help='파일 삭제')
+delete_parser.add_argument('filename', help='삭제할 파일 이름')
+delete_parser.add_argument('--force', action='store_true', help='강제 삭제')
+
+args = parser.parse_args()
+
+if args.command == 'create':
+    print(f"파일 생성 중: {args.filename}")
+    if args.content:
+        print(f"내용: {args.content}")
+elif args.command == 'delete':
+    print(f"파일 삭제 중: {args.filename}")
+    if args.force:
+        print("강제 옵션 사용")
+```
+
+이제 하위 명령어로 프로그램을 사용할 수 있습니다:
+
+```
+$ python filemanager.py create myfile.txt --content "안녕하세요!"
+파일 생성 중: myfile.txt
+내용: 안녕하세요!
+
+$ python filemanager.py delete myfile.txt --force
+파일 삭제 중: myfile.txt
+강제 옵션 사용
+```
+
+## Advanced Customization
+
+The `argparse` module offers many ways to customize your command-line interface:
+
+### Custom Help Formatting
+
+```python
+parser = argparse.ArgumentParser(
+    description='My Program',
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog='Example:\n  python program.py --input file.txt'
+)
+```
+
+### Custom Validation
+
+You can validate arguments with a custom function:
+
+```python
+def positive_int(value):
+    ivalue = int(value)
+    if ivalue <= 0:
+        raise argparse.ArgumentTypeError(f"{value} is not a positive integer")
+    return ivalue
+
+parser.add_argument('--count', type=positive_int, help='A positive integer')
+```
+
+### Default Values from Environment Variables
+
+```python
+import os
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--api-key', default=os.environ.get('API_KEY'), help='API key')
+```
+
+## 고급 사용자 정의
+
+`argparse` 모듈은 명령줄 인터페이스를 사용자 정의하는 많은 방법을 제공합니다:
+
+### 사용자 정의 도움말 형식
+
+```python
+parser = argparse.ArgumentParser(
+    description='내 프로그램',
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog='예제:\n  python program.py --input file.txt'
+)
+```
+
+### 사용자 정의 유효성 검사
+
+사용자 정의 함수로 인자의 유효성을 검사할 수 있습니다:
+
+```python
+def positive_int(value):
+    ivalue = int(value)
+    if ivalue <= 0:
+        raise argparse.ArgumentTypeError(f"{value}는 양의 정수가 아닙니다")
+    return ivalue
+
+parser.add_argument('--count', type=positive_int, help='양의 정수')
+```
+
+### 환경 변수에서 기본값 가져오기
+
+```python
+import os
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--api-key', default=os.environ.get('API_KEY'), help='API 키')
+```
+
+## Best Practices
+
+1. **Provide descriptive help messages**: Help users understand what each argument does.
+
+2. **Use meaningful default values**: Choose sensible defaults to make your program easier to use.
+
+3. **Follow CLI conventions**: Use `-h` and `--help` for help, single dash (`-v`) for short options, double dash (`--verbose`) for long options.
+
+4. **Keep it simple**: Don't overwhelm users with too many options. Group related options with subcommands if necessary.
+
+5. **Validate early**: Check for invalid combinations of arguments as early as possible.
+
+6. **Handle errors gracefully**: Provide helpful error messages when something goes wrong.
+
+7. **Test with edge cases**: Make sure your program handles unexpected input properly.
+
+## Complete Example
+
+Here's a complete example that incorporates many of the concepts discussed:
+
+```python
+import argparse
+import os
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='File processing utility',
+        epilog='Example: python fileutil.py process input.txt --output result.txt'
+    )
+    
+    # Create subparsers for different commands
+    subparsers = parser.add_subparsers(dest='command', help='Commands')
+    subparsers.required = True
+    
+    # Process command
+    process_parser = subparsers.add_parser('process', help='Process a file')
+    process_parser.add_argument('input', help='Input file path')
+    process_parser.add_argument('--output', '-o', help='Output file path')
+    process_parser.add_argument('--verbose', '-v', action='count', default=0, help='Increase verbosity')
+    process_parser.add_argument('--strict', action='store_true', help='Enable strict mode')
+    
+    # Check command
+    check_parser = subparsers.add_parser('check', help='Check a file')
+    check_parser.add_argument('files', nargs='+', help='Files to check')
+    
+    return parser.parse_args()
+
+def main():
+    args = parse_args()
+    
+    if args.command == 'process':
+        if not os.path.exists(args.input):
+            print(f"Error: Input file '{args.input}' not found")
+            return 1
+        
+        print(f"Processing '{args.input}'")
+        if args.output:
+            print(f"Output will be written to '{args.output}'")
+        
+        if args.verbose >= 1:
+            print("Verbose mode enabled")
+        if args.verbose >= 2:
+            print("Extra verbose information")
+        if args.strict:
+            print("Strict mode enabled")
+            
+    elif args.command == 'check':
+        print(f"Checking {len(args.files)} files:")
+        for f in args.files:
+            exists = os.path.exists(f)
+            status = "exists" if exists else "not found"
+            print(f"  {f}: {status}")
+    
+    return 0
+
+if __name__ == "__main__":
+    exit(main())
+```
+
+## 모범 사례
+
+1. **설명적인 도움말 메시지 제공**: 각 인자가 무엇을 하는지 사용자가 이해할 수 있도록 합니다.
+
+2. **의미 있는 기본값 사용**: 프로그램을 더 쉽게 사용할 수 있도록 합리적인 기본값을 선택합니다.
+
+3. **CLI 규칙 따르기**: 도움말에는 `-h`와 `--help`를, 짧은 옵션에는 단일 대시(`-v`), 긴 옵션에는 이중 대시(`--verbose`)를 사용합니다.
+
+4. **단순하게 유지**: 너무 많은 옵션으로 사용자를 압도하지 마세요. 필요한 경우 하위 명령어로 관련 옵션을 그룹화하세요.
+
+5. **조기 검증**: 가능한 빨리 잘못된 인자 조합을 확인하세요.
+
+6. **오류를 우아하게 처리**: 문제가 발생했을 때 유용한 오류 메시지를 제공하세요.
+
+7. **엣지 케이스 테스트**: 프로그램이 예상치 못한 입력을 적절히 처리하는지 확인하세요.
+
+## 완전한 예제
+
+다음은 논의된 많은 개념을 통합한 완전한 예제입니다:
+
+```python
+import argparse
+import os
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='파일 처리 유틸리티',
+        epilog='예제: python fileutil.py process input.txt --output result.txt'
+    )
+    
+    # 다양한 명령어에 대한 하위 파서 생성
+    subparsers = parser.add_subparsers(dest='command', help='명령어')
+    subparsers.required = True
+    
+    # 처리 명령어
+    process_parser = subparsers.add_parser('process', help='파일 처리')
+    process_parser.add_argument('input', help='입력 파일 경로')
+    process_parser.add_argument('--output', '-o', help='출력 파일 경로')
+    process_parser.add_argument('--verbose', '-v', action='count', default=0, help='상세도 증가')
+    process_parser.add_argument('--strict', action='store_true', help='엄격 모드 활성화')
+    
+    # 확인 명령어
+    check_parser = subparsers.add_parser('check', help='파일 확인')
+    check_parser.add_argument('files', nargs='+', help='확인할 파일들')
+    
+    return parser.parse_args()
+
+def main():
+    args = parse_args()
+    
+    if args.command == 'process':
+        if not os.path.exists(args.input):
+            print(f"오류: 입력 파일 '{args.input}'을(를) 찾을 수 없습니다")
+            return 1
+        
+        print(f"'{args.input}' 처리 중")
+        if args.output:
+            print(f"출력은 '{args.output}'에 기록됩니다")
+        
+        if args.verbose >= 1:
+            print("상세 모드 활성화됨")
+        if args.verbose >= 2:
+            print("추가 상세 정보")
+        if args.strict:
+            print("엄격 모드 활성화됨")
+            
+    elif args.command == 'check':
+        print(f"{len(args.files)}개 파일 확인 중:")
+        for f in args.files:
+            exists = os.path.exists(f)
+            status = "존재함" if exists else "찾을 수 없음"
+            print(f"  {f}: {status}")
+    
+    return 0
+
+if __name__ == "__main__":
+    exit(main())
+```
+
+## Conclusion
+
+The `argparse` module is a powerful tool that makes it easy to create user-friendly command-line interfaces. By learning its features and following best practices, you can build robust CLI applications that are intuitive and easy to use.
+
+Remember that a good CLI design focuses on the user experience. Clear documentation, meaningful defaults, and consistent behavior will make your command-line tools more valuable to users.
+
+## 결론
+
+`argparse` 모듈은 사용자 친화적인 명령줄 인터페이스를 쉽게 만들 수 있는 강력한 도구입니다. 그 기능을 배우고 모범 사례를 따르면 직관적이고 사용하기 쉬운 강력한 CLI 애플리케이션을 구축할 수 있습니다.
+
+좋은 CLI 설계는 사용자 경험에 중점을 둔다는 것을 기억하세요. 명확한 문서, 의미 있는 기본값, 일관된 동작은 명령줄 도구를 사용자에게 더 가치 있게 만들 것입니다.

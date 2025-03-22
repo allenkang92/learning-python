@@ -1,373 +1,468 @@
-Logging HOWTO
-Author:
-Vinay Sajip <vinay_sajip at red-dove dot com>
+# Python Logging HOWTO
 
-This page contains tutorial information. For links to reference information and a logging cookbook, please see Other resources.
+# Python 로깅 사용 가이드
 
-Basic Logging Tutorial
-Logging is a means of tracking events that happen when some software runs. The software’s developer adds logging calls to their code to indicate that certain events have occurred. An event is described by a descriptive message which can optionally contain variable data (i.e. data that is potentially different for each occurrence of the event). Events also have an importance which the developer ascribes to the event; the importance can also be called the level or severity.
+## Introduction
 
-When to use logging
-You can access logging functionality by creating a logger via logger = getLogger(__name__), and then calling the logger’s debug(), info(), warning(), error() and critical() methods. To determine when to use logging, and to see which logger methods to use when, see the table below. It states, for each of a set of common tasks, the best tool to use for that task.
+The `logging` module in Python's standard library provides a flexible framework for emitting log messages from Python programs. It's a powerful tool that allows developers to track events that happen when software runs, which is crucial for debugging, monitoring, and maintaining applications.
 
-Task you want to perform
+This guide will walk you through the basics of using the logging module, configuring it effectively, and adopting best practices to make your code more maintainable and your debugging sessions more productive.
 
-The best tool for the task
+## 소개
 
-Display console output for ordinary usage of a command line script or program
+Python 표준 라이브러리의 `logging` 모듈은 Python 프로그램에서 로그 메시지를 출력하기 위한 유연한 프레임워크를 제공합니다. 이는 소프트웨어 실행 시 발생하는 이벤트를 추적할 수 있게 해주는 강력한 도구로, 디버깅, 모니터링 및 애플리케이션 유지 관리에 중요합니다.
 
-print()
+이 가이드는 로깅 모듈 사용의 기본, 효과적인 구성 방법, 그리고 코드를 더 유지보수하기 쉽게 만들고 디버깅 세션을 더 생산적으로 만들기 위한 모범 사례를 설명합니다.
 
-Report events that occur during normal operation of a program (e.g. for status monitoring or fault investigation)
+## Why Use Logging?
 
-A logger’s info() (or debug() method for very detailed output for diagnostic purposes)
+You might wonder why you should use the logging module instead of simply using `print()` statements. Here are a few key advantages:
 
-Issue a warning regarding a particular runtime event
+1. **Categorization**: Log messages can be categorized by their severity level.
+2. **Flexibility**: Logging output can be directed to different destinations (console, files, network, etc.)
+3. **Configurability**: The logging behavior can be configured without modifying the application code.
+4. **Standardization**: It provides a standardized way to produce log messages across your application.
+5. **Context**: Log messages can include contextual information like timestamps, line numbers, etc.
 
-warnings.warn() in library code if the issue is avoidable and the client application should be modified to eliminate the warning
+## 왜 로깅을 사용해야 하나요?
 
-A logger’s warning() method if there is nothing the client application can do about the situation, but the event should still be noted
+단순히 `print()` 문을 사용하는 대신 로깅 모듈을 사용해야 하는 이유가 궁금할 수 있습니다. 다음은 몇 가지 주요 장점입니다:
 
-Report an error regarding a particular runtime event
+1. **분류**: 로그 메시지는 심각도 수준에 따라 분류될 수 있습니다.
+2. **유연성**: 로깅 출력은 다양한 대상(콘솔, 파일, 네트워크 등)으로 전달될 수 있습니다.
+3. **구성 가능성**: 애플리케이션 코드를 수정하지 않고도 로깅 동작을 구성할 수 있습니다.
+4. **표준화**: 애플리케이션 전체에서 로그 메시지를 생성하는 표준화된 방법을 제공합니다.
+5. **컨텍스트**: 로그 메시지에는 타임스탬프, 라인 번호 등의 컨텍스트 정보가 포함될 수 있습니다.
 
-Raise an exception
+## Basic Logging
 
-Report suppression of an error without raising an exception (e.g. error handler in a long-running server process)
+Let's start with a simple example:
 
-A logger’s error(), exception() or critical() method as appropriate for the specific error and application domain
-
-The logger methods are named after the level or severity of the events they are used to track. The standard levels and their applicability are described below (in increasing order of severity):
-
-Level
-
-When it’s used
-
-DEBUG
-
-Detailed information, typically of interest only when diagnosing problems.
-
-INFO
-
-Confirmation that things are working as expected.
-
-WARNING
-
-An indication that something unexpected happened, or indicative of some problem in the near future (e.g. ‘disk space low’). The software is still working as expected.
-
-ERROR
-
-Due to a more serious problem, the software has not been able to perform some function.
-
-CRITICAL
-
-A serious error, indicating that the program itself may be unable to continue running.
-
-The default level is WARNING, which means that only events of this severity and higher will be tracked, unless the logging package is configured to do otherwise.
-
-Events that are tracked can be handled in different ways. The simplest way of handling tracked events is to print them to the console. Another common way is to write them to a disk file.
-
-A simple example
-A very simple example is:
-
-import logging
-logging.warning('Watch out!')  # will print a message to the console
-logging.info('I told you so')  # will not print anything
-If you type these lines into a script and run it, you’ll see:
-
-WARNING:root:Watch out!
-printed out on the console. The INFO message doesn’t appear because the default level is WARNING. The printed message includes the indication of the level and the description of the event provided in the logging call, i.e. ‘Watch out!’. The actual output can be formatted quite flexibly if you need that; formatting options will also be explained later.
-
-Notice that in this example, we use functions directly on the logging module, like logging.debug, rather than creating a logger and calling functions on it. These functions operation on the root logger, but can be useful as they will call basicConfig() for you if it has not been called yet, like in this example. In larger programs you’ll usually want to control the logging configuration explicitly however - so for that reason as well as others, it’s better to create loggers and call their methods.
-
-Logging to a file
-A very common situation is that of recording logging events in a file, so let’s look at that next. Be sure to try the following in a newly started Python interpreter, and don’t just continue from the session described above:
-
-import logging
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
-logger.debug('This message should go to the log file')
-logger.info('So should this')
-logger.warning('And this, too')
-logger.error('And non-ASCII stuff, too, like Øresund and Malmö')
-Changed in version 3.9: The encoding argument was added. In earlier Python versions, or if not specified, the encoding used is the default value used by open(). While not shown in the above example, an errors argument can also now be passed, which determines how encoding errors are handled. For available values and the default, see the documentation for open().
-
-And now if we open the file and look at what we have, we should find the log messages:
-
-DEBUG:__main__:This message should go to the log file
-INFO:__main__:So should this
-WARNING:__main__:And this, too
-ERROR:__main__:And non-ASCII stuff, too, like Øresund and Malmö
-This example also shows how you can set the logging level which acts as the threshold for tracking. In this case, because we set the threshold to DEBUG, all of the messages were printed.
-
-If you want to set the logging level from a command-line option such as:
-
---log=INFO
-and you have the value of the parameter passed for --log in some variable loglevel, you can use:
-
-getattr(logging, loglevel.upper())
-to get the value which you’ll pass to basicConfig() via the level argument. You may want to error check any user input value, perhaps as in the following example:
-
-# assuming loglevel is bound to the string value obtained from the
-# command line argument. Convert to upper case to allow the user to
-# specify --log=DEBUG or --log=debug
-numeric_level = getattr(logging, loglevel.upper(), None)
-if not isinstance(numeric_level, int):
-    raise ValueError('Invalid log level: %s' % loglevel)
-logging.basicConfig(level=numeric_level, ...)
-The call to basicConfig() should come before any calls to a logger’s methods such as debug(), info(), etc. Otherwise, that logging event may not be handled in the desired manner.
-
-If you run the above script several times, the messages from successive runs are appended to the file example.log. If you want each run to start afresh, not remembering the messages from earlier runs, you can specify the filemode argument, by changing the call in the above example to:
-
-logging.basicConfig(filename='example.log', filemode='w', level=logging.DEBUG)
-The output will be the same as before, but the log file is no longer appended to, so the messages from earlier runs are lost.
-
-Logging variable data
-To log variable data, use a format string for the event description message and append the variable data as arguments. For example:
-
-import logging
-logging.warning('%s before you %s', 'Look', 'leap!')
-will display:
-
-WARNING:root:Look before you leap!
-As you can see, merging of variable data into the event description message uses the old, %-style of string formatting. This is for backwards compatibility: the logging package pre-dates newer formatting options such as str.format() and string.Template. These newer formatting options are supported, but exploring them is outside the scope of this tutorial: see Using particular formatting styles throughout your application for more information.
-
-Changing the format of displayed messages
-To change the format which is used to display messages, you need to specify the format you want to use:
-
-import logging
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
-logging.debug('This message should appear on the console')
-logging.info('So should this')
-logging.warning('And this, too')
-which would print:
-
-DEBUG:This message should appear on the console
-INFO:So should this
-WARNING:And this, too
-Notice that the ‘root’ which appeared in earlier examples has disappeared. For a full set of things that can appear in format strings, you can refer to the documentation for LogRecord attributes, but for simple usage, you just need the levelname (severity), message (event description, including variable data) and perhaps to display when the event occurred. This is described in the next section.
-
-Displaying the date/time in messages
-To display the date and time of an event, you would place ‘%(asctime)s’ in your format string:
-
-import logging
-logging.basicConfig(format='%(asctime)s %(message)s')
-logging.warning('is when this event was logged.')
-which should print something like this:
-
-2010-12-12 11:41:42,612 is when this event was logged.
-The default format for date/time display (shown above) is like ISO8601 or RFC 3339. If you need more control over the formatting of the date/time, provide a datefmt argument to basicConfig, as in this example:
-
-import logging
-logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-logging.warning('is when this event was logged.')
-which would display something like this:
-
-12/12/2010 11:46:36 AM is when this event was logged.
-The format of the datefmt argument is the same as supported by time.strftime().
-
-Next Steps
-That concludes the basic tutorial. It should be enough to get you up and running with logging. There’s a lot more that the logging package offers, but to get the best out of it, you’ll need to invest a little more of your time in reading the following sections. If you’re ready for that, grab some of your favourite beverage and carry on.
-
-If your logging needs are simple, then use the above examples to incorporate logging into your own scripts, and if you run into problems or don’t understand something, please post a question on the comp.lang.python Usenet group (available at https://groups.google.com/g/comp.lang.python) and you should receive help before too long.
-
-Still here? You can carry on reading the next few sections, which provide a slightly more advanced/in-depth tutorial than the basic one above. After that, you can take a look at the Logging Cookbook.
-
-Advanced Logging Tutorial
-The logging library takes a modular approach and offers several categories of components: loggers, handlers, filters, and formatters.
-
-Loggers expose the interface that application code directly uses.
-
-Handlers send the log records (created by loggers) to the appropriate destination.
-
-Filters provide a finer grained facility for determining which log records to output.
-
-Formatters specify the layout of log records in the final output.
-
-Log event information is passed between loggers, handlers, filters and formatters in a LogRecord instance.
-
-Logging is performed by calling methods on instances of the Logger class (hereafter called loggers). Each instance has a name, and they are conceptually arranged in a namespace hierarchy using dots (periods) as separators. For example, a logger named ‘scan’ is the parent of loggers ‘scan.text’, ‘scan.html’ and ‘scan.pdf’. Logger names can be anything you want, and indicate the area of an application in which a logged message originates.
-
-A good convention to use when naming loggers is to use a module-level logger, in each module which uses logging, named as follows:
-
-logger = logging.getLogger(__name__)
-This means that logger names track the package/module hierarchy, and it’s intuitively obvious where events are logged just from the logger name.
-
-The root of the hierarchy of loggers is called the root logger. That’s the logger used by the functions debug(), info(), warning(), error() and critical(), which just call the same-named method of the root logger. The functions and the methods have the same signatures. The root logger’s name is printed as ‘root’ in the logged output.
-
-It is, of course, possible to log messages to different destinations. Support is included in the package for writing log messages to files, HTTP GET/POST locations, email via SMTP, generic sockets, queues, or OS-specific logging mechanisms such as syslog or the Windows NT event log. Destinations are served by handler classes. You can create your own log destination class if you have special requirements not met by any of the built-in handler classes.
-
-By default, no destination is set for any logging messages. You can specify a destination (such as console or file) by using basicConfig() as in the tutorial examples. If you call the functions debug(), info(), warning(), error() and critical(), they will check to see if no destination is set; and if one is not set, they will set a destination of the console (sys.stderr) and a default format for the displayed message before delegating to the root logger to do the actual message output.
-
-The default format set by basicConfig() for messages is:
-
-severity:logger name:message
-You can change this by passing a format string to basicConfig() with the format keyword argument. For all options regarding how a format string is constructed, see Formatter Objects.
-
-Logging Flow
-The flow of log event information in loggers and handlers is illustrated in the following diagram.
-
-Logger flow
-Create LogRecord
-Logging call in user code, e.g.
-logger.info(...)
-Stop
-Does a filter attached to logger reject the record?
-Pass record to handlers of current logger
-Is propagate true for current logger?
-Is there a parent logger?
-Set current logger to parent
-At least one handler in hierarchy?
-Use lastResort handler
-Handler enabled for level of record?
-Does a filter attached to handler reject the record?
-Stop
-Emit (includes formatting)
-Handler flow
-Logger enabled for level of call?
-No
-Yes
-Yes
-No
-No
-Yes
-Yes
-No
-No
-Yes
-No
-Yes
-No
-Yes
-Record passed to handler
-Loggers
-Logger objects have a threefold job. First, they expose several methods to application code so that applications can log messages at runtime. Second, logger objects determine which log messages to act upon based upon severity (the default filtering facility) or filter objects. Third, logger objects pass along relevant log messages to all interested log handlers.
-
-The most widely used methods on logger objects fall into two categories: configuration and message sending.
-
-These are the most common configuration methods:
-
-Logger.setLevel() specifies the lowest-severity log message a logger will handle, where debug is the lowest built-in severity level and critical is the highest built-in severity. For example, if the severity level is INFO, the logger will handle only INFO, WARNING, ERROR, and CRITICAL messages and will ignore DEBUG messages.
-
-Logger.addHandler() and Logger.removeHandler() add and remove handler objects from the logger object. Handlers are covered in more detail in Handlers.
-
-Logger.addFilter() and Logger.removeFilter() add and remove filter objects from the logger object. Filters are covered in more detail in Filter Objects.
-
-You don’t need to always call these methods on every logger you create. See the last two paragraphs in this section.
-
-With the logger object configured, the following methods create log messages:
-
-Logger.debug(), Logger.info(), Logger.warning(), Logger.error(), and Logger.critical() all create log records with a message and a level that corresponds to their respective method names. The message is actually a format string, which may contain the standard string substitution syntax of %s, %d, %f, and so on. The rest of their arguments is a list of objects that correspond with the substitution fields in the message. With regard to **kwargs, the logging methods care only about a keyword of exc_info and use it to determine whether to log exception information.
-
-Logger.exception() creates a log message similar to Logger.error(). The difference is that Logger.exception() dumps a stack trace along with it. Call this method only from an exception handler.
-
-Logger.log() takes a log level as an explicit argument. This is a little more verbose for logging messages than using the log level convenience methods listed above, but this is how to log at custom log levels.
-
-getLogger() returns a reference to a logger instance with the specified name if it is provided, or root if not. The names are period-separated hierarchical structures. Multiple calls to getLogger() with the same name will return a reference to the same logger object. Loggers that are further down in the hierarchical list are children of loggers higher up in the list. For example, given a logger with a name of foo, loggers with names of foo.bar, foo.bar.baz, and foo.bam are all descendants of foo.
-
-Loggers have a concept of effective level. If a level is not explicitly set on a logger, the level of its parent is used instead as its effective level. If the parent has no explicit level set, its parent is examined, and so on - all ancestors are searched until an explicitly set level is found. The root logger always has an explicit level set (WARNING by default). When deciding whether to process an event, the effective level of the logger is used to determine whether the event is passed to the logger’s handlers.
-
-Child loggers propagate messages up to the handlers associated with their ancestor loggers. Because of this, it is unnecessary to define and configure handlers for all the loggers an application uses. It is sufficient to configure handlers for a top-level logger and create child loggers as needed. (You can, however, turn off propagation by setting the propagate attribute of a logger to False.)
-
-Handlers
-Handler objects are responsible for dispatching the appropriate log messages (based on the log messages’ severity) to the handler’s specified destination. Logger objects can add zero or more handler objects to themselves with an addHandler() method. As an example scenario, an application may want to send all log messages to a log file, all log messages of error or higher to stdout, and all messages of critical to an email address. This scenario requires three individual handlers where each handler is responsible for sending messages of a specific severity to a specific location.
-
-The standard library includes quite a few handler types (see Useful Handlers); the tutorials use mainly StreamHandler and FileHandler in its examples.
-
-There are very few methods in a handler for application developers to concern themselves with. The only handler methods that seem relevant for application developers who are using the built-in handler objects (that is, not creating custom handlers) are the following configuration methods:
-
-The setLevel() method, just as in logger objects, specifies the lowest severity that will be dispatched to the appropriate destination. Why are there two setLevel() methods? The level set in the logger determines which severity of messages it will pass to its handlers. The level set in each handler determines which messages that handler will send on.
-
-setFormatter() selects a Formatter object for this handler to use.
-
-addFilter() and removeFilter() respectively configure and deconfigure filter objects on handlers.
-
-Application code should not directly instantiate and use instances of Handler. Instead, the Handler class is a base class that defines the interface that all handlers should have and establishes some default behavior that child classes can use (or override).
-
-Formatters
-Formatter objects configure the final order, structure, and contents of the log message. Unlike the base logging.Handler class, application code may instantiate formatter classes, although you could likely subclass the formatter if your application needs special behavior. The constructor takes three optional arguments – a message format string, a date format string and a style indicator.
-
-logging.Formatter.__init__(fmt=None, datefmt=None, style='%')
-If there is no message format string, the default is to use the raw message. If there is no date format string, the default date format is:
-
-%Y-%m-%d %H:%M:%S
-with the milliseconds tacked on at the end. The style is one of '%', '{', or '$'. If one of these is not specified, then '%' will be used.
-
-If the style is '%', the message format string uses %(<dictionary key>)s styled string substitution; the possible keys are documented in LogRecord attributes. If the style is '{', the message format string is assumed to be compatible with str.format() (using keyword arguments), while if the style is '$' then the message format string should conform to what is expected by string.Template.substitute().
-
-Changed in version 3.2: Added the style parameter.
-
-The following message format string will log the time in a human-readable format, the severity of the message, and the contents of the message, in that order:
-
-'%(asctime)s - %(levelname)s - %(message)s'
-Formatters use a user-configurable function to convert the creation time of a record to a tuple. By default, time.localtime() is used; to change this for a particular formatter instance, set the converter attribute of the instance to a function with the same signature as time.localtime() or time.gmtime(). To change it for all formatters, for example if you want all logging times to be shown in GMT, set the converter attribute in the Formatter class (to time.gmtime for GMT display).
-
-Configuring Logging
-Programmers can configure logging in three ways:
-
-Creating loggers, handlers, and formatters explicitly using Python code that calls the configuration methods listed above.
-
-Creating a logging config file and reading it using the fileConfig() function.
-
-Creating a dictionary of configuration information and passing it to the dictConfig() function.
-
-For the reference documentation on the last two options, see Configuration functions. The following example configures a very simple logger, a console handler, and a simple formatter using Python code:
-
+```python
 import logging
 
-# create logger
-logger = logging.getLogger('simple_example')
-logger.setLevel(logging.DEBUG)
+# Configure the logging system
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    filename='app.log'
+)
 
-# create console handler and set level to debug
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+# Log some messages
+logging.debug('This is a debug message')
+logging.info('This is an info message')
+logging.warning('This is a warning message')
+logging.error('This is an error message')
+logging.critical('This is a critical message')
+```
 
-# create formatter
+When you run this code, the messages at INFO level and above will be written to the file `app.log`. The DEBUG message won't be recorded because we set the log level to INFO.
+
+## 기본 로깅
+
+간단한 예제로 시작해 보겠습니다:
+
+```python
+import logging
+
+# 로깅 시스템 구성
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    filename='app.log'
+)
+
+# 로그 메시지 생성
+logging.debug('디버그 메시지입니다')
+logging.info('정보 메시지입니다')
+logging.warning('경고 메시지입니다')
+logging.error('오류 메시지입니다')
+logging.critical('심각한 메시지입니다')
+```
+
+이 코드를 실행하면 INFO 레벨 이상의 메시지가 `app.log` 파일에 기록됩니다. DEBUG 메시지는 로그 레벨을 INFO로 설정했기 때문에 기록되지 않습니다.
+
+## Log Levels
+
+The logging module provides several levels to categorize the severity of log messages:
+
+| Level | Numeric Value | Description |
+|-------|--------------|-------------|
+| DEBUG | 10 | Detailed information, typically only valuable when diagnosing problems |
+| INFO | 20 | Confirmation that things are working as expected |
+| WARNING | 30 | Indication that something unexpected happened, or may happen in the near future |
+| ERROR | 40 | Due to a more serious problem, the software has not been able to perform a function |
+| CRITICAL | 50 | A very serious error, indicating that the program itself may be unable to continue running |
+
+You can set the log level when configuring the logging system, which will determine which messages get recorded:
+
+```python
+# Only show WARNING and above
+logging.basicConfig(level=logging.WARNING)
+
+# This will be ignored
+logging.info("This won't be printed")
+
+# These will be shown
+logging.warning("This will be printed")
+logging.error("So will this")
+```
+
+## 로그 레벨
+
+로깅 모듈은 로그 메시지의 심각도를 분류하기 위한 여러 레벨을 제공합니다:
+
+| 레벨 | 숫자 값 | 설명 |
+|-------|--------------|-------------|
+| DEBUG | 10 | 문제 진단에 주로 유용한 상세 정보 |
+| INFO | 20 | 예상대로 작동하고 있다는 확인 |
+| WARNING | 30 | 예상치 못한 일이 발생했거나 가까운 미래에 발생할 수 있다는 표시 |
+| ERROR | 40 | 더 심각한 문제로 인해 소프트웨어가 기능을 수행할 수 없음 |
+| CRITICAL | 50 | 프로그램 자체가 실행을 계속할 수 없을 정도로 매우 심각한 오류 |
+
+로깅 시스템을 구성할 때 로그 레벨을 설정할 수 있으며, 이는 어떤 메시지가 기록될지 결정합니다:
+
+```python
+# WARNING 이상만 표시
+logging.basicConfig(level=logging.WARNING)
+
+# 이것은 무시됩니다
+logging.info("이것은 출력되지 않습니다")
+
+# 이것들은 표시됩니다
+logging.warning("이것은 출력됩니다")
+logging.error("이것도 마찬가지입니다")
+```
+
+## Configuring Logging
+
+The `basicConfig()` function provides a simple way to configure the root logger. Here are some common configuration options:
+
+```python
+logging.basicConfig(
+    level=logging.INFO,  # Set the log level
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Format of log messages
+    datefmt='%Y-%m-%d %H:%M:%S',  # Format of the timestamp
+    filename='app.log',  # Send log messages to a file
+    filemode='w',  # 'w' to overwrite, 'a' to append
+    stream=sys.stdout  # Used instead of filename to log to stdout
+)
+```
+
+Note that `basicConfig()` can only be called once in your application. If the root logger already has handlers configured, subsequent calls will have no effect.
+
+## 로깅 구성
+
+`basicConfig()` 함수는 루트 로거를 구성하는 간단한 방법을 제공합니다. 다음은 몇 가지 일반적인 구성 옵션입니다:
+
+```python
+logging.basicConfig(
+    level=logging.INFO,  # 로그 레벨 설정
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # 로그 메시지 형식
+    datefmt='%Y-%m-%d %H:%M:%S',  # 타임스탬프 형식
+    filename='app.log',  # 로그 메시지를 파일로 보냄
+    filemode='w',  # 'w'는 덮어쓰기, 'a'는 추가
+    stream=sys.stdout  # filename 대신 사용하여 stdout으로 로깅
+)
+```
+
+`basicConfig()`는 애플리케이션에서 한 번만 호출할 수 있습니다. 루트 로거에 이미 핸들러가 구성되어 있으면 이후 호출은 효과가 없습니다.
+
+## Using Loggers
+
+In a larger application, it's usually better to use named loggers instead of the root logger:
+
+```python
+# Create a logger
+logger = logging.getLogger('my_app')
+logger.setLevel(logging.INFO)
+
+# Create a handler
+handler = logging.FileHandler('my_app.log')
+handler.setLevel(logging.INFO)
+
+# Create a formatter
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
 
-# add formatter to ch
-ch.setFormatter(formatter)
+# Add the handler to the logger
+logger.addHandler(handler)
 
-# add ch to logger
-logger.addHandler(ch)
+# Log some messages
+logger.info('Starting my_app')
+logger.warning('Something might be wrong')
+```
 
-# 'application' code
-logger.debug('debug message')
-logger.info('info message')
-logger.warning('warn message')
-logger.error('error message')
-logger.critical('critical message')
-Running this module from the command line produces the following output:
+Using named loggers gives you more control over the logging behavior of different parts of your application.
 
-python simple_logging_module.py
-2005-03-19 15:10:26,618 - simple_example - DEBUG - debug message
-2005-03-19 15:10:26,620 - simple_example - INFO - info message
-2005-03-19 15:10:26,695 - simple_example - WARNING - warn message
-2005-03-19 15:10:26,697 - simple_example - ERROR - error message
-2005-03-19 15:10:26,773 - simple_example - CRITICAL - critical message
-The following Python module creates a logger, handler, and formatter nearly identical to those in the example listed above, with the only difference being the names of the objects:
+## 로거 사용하기
 
+대규모 애플리케이션에서는 일반적으로 루트 로거 대신 명명된 로거를 사용하는 것이
+좋습니다:
+
+```python
+# 로거 생성
+logger = logging.getLogger('my_app')
+logger.setLevel(logging.INFO)
+
+# 핸들러 생성
+handler = logging.FileHandler('my_app.log')
+handler.setLevel(logging.INFO)
+
+# 포맷터 생성
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+# 로거에 핸들러 추가
+logger.addHandler(handler)
+
+# 로그 메시지 생성
+logger.info('my_app 시작 중')
+logger.warning('문제가 있을 수 있습니다')
+```
+
+명명된 로거를 사용하면 애플리케이션의 다양한 부분에 대한 로깅 동작을 더 잘 제어할 수 있습니다.
+
+## Log Handlers
+
+Handlers send the log records to the appropriate destination. The logging module provides several built-in handler classes:
+
+1. **StreamHandler**: Sends log messages to streams such as `sys.stdout`, `sys.stderr` or any file-like object.
+2. **FileHandler**: Sends log messages to a disk file.
+3. **RotatingFileHandler**: Sends log messages to a disk file, rotating the log file at certain times or sizes.
+4. **TimedRotatingFileHandler**: Similar to RotatingFileHandler, but rotating happens based on time.
+5. **SocketHandler**: Sends log messages to a network socket.
+6. **SMTPHandler**: Sends log messages to an email address via SMTP.
+7. **SysLogHandler**: Sends log messages to a Unix syslog daemon.
+8. **NTEventLogHandler**: Sends log messages to a Windows NT/2000/XP event log.
+9. **MemoryHandler**: Buffers log records in memory.
+10. **HTTPHandler**: Sends log messages to an HTTP server using either GET or POST.
+
+You can use multiple handlers to send log messages to different destinations:
+
+```python
+# Create logger
+logger = logging.getLogger('my_app')
+
+# File handler for all logs
+file_handler = logging.FileHandler('all_logs.log')
+file_handler.setLevel(logging.DEBUG)
+logger.addHandler(file_handler)
+
+# Stream handler for error and above
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.ERROR)
+logger.addHandler(stream_handler)
+
+# Now log messages will go to the appropriate handlers
+logger.debug('Debug message - goes only to file')
+logger.error('Error message - goes to both file and console')
+```
+
+## 로그 핸들러
+
+핸들러는 로그 레코드를 적절한 대상으로 전송합니다. 로깅 모듈은 여러 내장 핸들러 클래스를 제공합니다:
+
+1. **StreamHandler**: 로그 메시지를 `sys.stdout`, `sys.stderr` 또는 파일과 유사한 객체와 같은 스트림으로 보냅니다.
+2. **FileHandler**: 로그 메시지를 디스크 파일로 보냅니다.
+3. **RotatingFileHandler**: 로그 메시지를 디스크 파일로 보내고, 특정 시간이나 크기에 도달하면 로그 파일을 회전시킵니다.
+4. **TimedRotatingFileHandler**: RotatingFileHandler와 유사하지만, 회전이 시간을 기준으로 발생합니다.
+5. **SocketHandler**: 로그 메시지를 네트워크 소켓으로 보냅니다.
+6. **SMTPHandler**: SMTP를 통해 로그 메시지를 이메일 주소로 보냅니다.
+7. **SysLogHandler**: 로그 메시지를 Unix syslog 데몬으로 보냅니다.
+8. **NTEventLogHandler**: 로그 메시지를 Windows NT/2000/XP 이벤트 로그로 보냅니다.
+9. **MemoryHandler**: 로그 레코드를 메모리에 버퍼링합니다.
+10. **HTTPHandler**: GET 또는 POST를 사용하여 로그 메시지를 HTTP 서버로 보냅니다.
+
+여러 핸들러를 사용하여 로그 메시지를 다양한 대상으로 보낼 수 있습니다:
+
+```python
+# 로거 생성
+logger = logging.getLogger('my_app')
+
+# 모든 로그를 위한 파일 핸들러
+file_handler = logging.FileHandler('all_logs.log')
+file_handler.setLevel(logging.DEBUG)
+logger.addHandler(file_handler)
+
+# 오류 이상을 위한 스트림 핸들러
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.ERROR)
+logger.addHandler(stream_handler)
+
+# 이제 로그 메시지는 적절한 핸들러로 전송됩니다
+logger.debug('디버그 메시지 - 파일에만 기록됩니다')
+logger.error('오류 메시지 - 파일과 콘솔 모두에 기록됩니다')
+```
+
+## Log Formatters
+
+Formatters specify the layout of log messages. They use a string with certain placeholders:
+
+```python
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+```
+
+Common placeholders include:
+
+| Attribute name | Format | Description |
+|----------------|--------|-------------|
+| asctime | %(asctime)s | Human-readable time |
+| created | %(created)f | Time when the LogRecord was created (as returned by time.time()) |
+| filename | %(filename)s | Filename portion of pathname |
+| funcName | %(funcName)s | Name of function containing the logging call |
+| levelname | %(levelname)s | Text logging level ('DEBUG', 'INFO', etc.) |
+| levelno | %(levelno)s | Numeric logging level (10, 20, etc.) |
+| lineno | %(lineno)d | Source line number where the logging call was issued |
+| message | %(message)s | The logged message |
+| module | %(module)s | Module (name portion of filename) |
+| name | %(name)s | Name of the logger |
+| pathname | %(pathname)s | Full pathname of the source file |
+| process | %(process)d | Process ID |
+| processName | %(processName)s | Process name |
+| thread | %(thread)d | Thread ID |
+| threadName | %(threadName)s | Thread name |
+
+You can assign different formatters to different handlers:
+
+```python
+# Create formatters
+simple_formatter = logging.Formatter('%(levelname)s - %(message)s')
+detailed_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# Apply formatters to handlers
+console_handler.setFormatter(simple_formatter)
+file_handler.setFormatter(detailed_formatter)
+```
+
+## 로그 포맷터
+
+포맷터는 로그 메시지의 레이아웃을 지정합니다. 특정 자리 표시자가 있는 문자열을 사용합니다:
+
+```python
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+```
+
+일반적인 자리 표시자는 다음과 같습니다:
+
+| 속성 이름 | 형식 | 설명 |
+|----------------|--------|-------------|
+| asctime | %(asctime)s | 사람이 읽을 수 있는 시간 |
+| created | %(created)f | LogRecord가 생성된 시간(time.time()이 반환한 값) |
+| filename | %(filename)s | 경로 이름의 파일 이름 부분 |
+| funcName | %(funcName)s | 로깅 호출을 포함하는 함수 이름 |
+| levelname | %(levelname)s | 텍스트 로깅 레벨('DEBUG', 'INFO' 등) |
+| levelno | %(levelno)s | 숫자 로깅 레벨(10, 20 등) |
+| lineno | %(lineno)d | 로깅 호출이 발생한 소스 라인 번호 |
+| message | %(message)s | 기록된 메시지 |
+| module | %(module)s | 모듈(파일 이름의 이름 부분) |
+| name | %(name)s | 로거의 이름 |
+| pathname | %(pathname)s | 소스 파일의 전체 경로 이름 |
+| process | %(process)d | 프로세스 ID |
+| processName | %(processName)s | 프로세스 이름 |
+| thread | %(thread)d | 스레드 ID |
+| threadName | %(threadName)s | 스레드 이름 |
+
+다른 핸들러에 다른 포맷터를 할당할 수 있습니다:
+
+```python
+# 포맷터 생성
+simple_formatter = logging.Formatter('%(levelname)s - %(message)s')
+detailed_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# 핸들러에 포맷터 적용
+console_handler.setFormatter(simple_formatter)
+file_handler.setFormatter(detailed_formatter)
+```
+
+## Logger Hierarchy
+
+Loggers are organized in a hierarchical namespace. For example, a logger named 'parent' is the parent of a logger named 'parent.child'. This allows for effective control over logging behaviors in different parts of your application.
+
+```python
+# Create parent logger
+parent_logger = logging.getLogger('parent')
+parent_logger.setLevel(logging.ERROR)
+
+# Create child logger
+child_logger = logging.getLogger('parent.child')
+child_logger.setLevel(logging.INFO)
+
+# Create handler and attach to parent
+handler = logging.StreamHandler()
+parent_logger.addHandler(handler)
+
+# Log messages
+parent_logger.info('This will not be logged - level too low')
+parent_logger.error('This will be logged')
+
+child_logger.info('This will be logged - child has INFO level')
+child_logger.error('This will be logged too - through parent handler')
+```
+
+Loggers pass log messages up to their parent loggers. This "propagation" can be turned off by setting the `propagate` attribute to `False`:
+
+```python
+child_logger.propagate = False
+child_logger.error('This will NOT be logged by the parent handler')
+```
+
+## 로거 계층 구조
+
+로거는 계층적 네임스페이스로 구성됩니다. 예를 들어, 'parent'라는 이름의 로거는 'parent.child'라는 이름의 로거의 부모입니다. 이를 통해 애플리케이션의 다양한 부분에서 로깅 동작을 효과적으로 제어할 수 있습니다.
+
+```python
+# 부모 로거 생성
+parent_logger = logging.getLogger('parent')
+parent_logger.setLevel(logging.ERROR)
+
+# 자식 로거 생성
+child_logger = logging.getLogger('parent.child')
+child_logger.setLevel(logging.INFO)
+
+# 핸들러 생성 및 부모에 연결
+handler = logging.StreamHandler()
+parent_logger.addHandler(handler)
+
+# 로그 메시지
+parent_logger.info('이것은 기록되지 않음 - 레벨이 너무 낮음')
+parent_logger.error('이것은 기록됨')
+
+child_logger.info('이것은 기록됨 - 자식은 INFO 레벨임')
+child_logger.error('이것도 기록됨 - 부모 핸들러를 통해')
+```
+
+로거는 로그 메시지를 부모 로거로 전달합니다. 이 "전파"는 `propagate` 속성을 `False`로 설정하여 끌 수 있습니다:
+
+```python
+child_logger.propagate = False
+child_logger.error('이것은 부모 핸들러에 의해 기록되지 않음')
+```
+
+## Configuration Using a File
+
+For more complex applications, it's often best to configure logging using a configuration file:
+
+```python
 import logging
 import logging.config
 
+# Load the logging configuration from a file
 logging.config.fileConfig('logging.conf')
 
-# create logger
-logger = logging.getLogger('simpleExample')
+# Get a logger
+logger = logging.getLogger('root')
+logger.debug('Debug message')
+```
 
-# 'application' code
-logger.debug('debug message')
-logger.info('info message')
-logger.warning('warn message')
-logger.error('error message')
-logger.critical('critical message')
-Here is the logging.conf file:
+A sample configuration file (`logging.conf`) might look like:
 
+```ini
 [loggers]
 keys=root,simpleExample
 
 [handlers]
-keys=consoleHandler
+keys=consoleHandler,fileHandler
 
 [formatters]
 keys=simpleFormatter
@@ -378,7 +473,7 @@ handlers=consoleHandler
 
 [logger_simpleExample]
 level=DEBUG
-handlers=consoleHandler
+handlers=fileHandler
 qualname=simpleExample
 propagate=0
 
@@ -388,220 +483,327 @@ level=DEBUG
 formatter=simpleFormatter
 args=(sys.stdout,)
 
+[handler_fileHandler]
+class=FileHandler
+level=DEBUG
+formatter=simpleFormatter
+args=('app.log', 'w')
+
+[formatter_simpleFormatter]
+format=%(asctime)s - %(name)s - %(levellevel)s - %(message)s
+datefmt=
+```
+
+You can also use a dictionary for configuration:
+
+```python
+import logging
+import logging.config
+
+config_dict = {
+    'version': 1,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'INFO',
+            'formatter': 'standard',
+            'stream': 'ext://sys.stdout'
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'level': 'DEBUG',
+            'formatter': 'standard',
+            'filename': 'app.log',
+            'mode': 'w'
+        }
+    },
+    'loggers': {
+        '': {  # Root logger
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True
+        }
+    }
+}
+
+logging.config.dictConfig(config_dict)
+logger = logging.getLogger()
+logger.info('Logging configured using a dictionary')
+```
+
+## 파일을 사용한 구성
+
+더 복잡한 애플리케이션의 경우, 구성 파일을 사용하여 로깅을 구성하는 것이 가장 좋습니다:
+
+```python
+import logging
+import logging.config
+
+# 파일에서 로깅 구성 로드
+logging.config.fileConfig('logging.conf')
+
+# 로거 가져오기
+logger = logging.getLogger('root')
+logger.debug('디버그 메시지')
+```
+
+샘플 구성 파일(`logging.conf`)은 다음과 같을 수 있습니다:
+
+```ini
+[loggers]
+keys=root,simpleExample
+
+[handlers]
+keys=consoleHandler,fileHandler
+
+[formatters]
+keys=simpleFormatter
+
+[logger_root]
+level=DEBUG
+handlers=consoleHandler
+
+[logger_simpleExample]
+level=DEBUG
+handlers=fileHandler
+qualname=simpleExample
+propagate=0
+
+[handler_consoleHandler]
+class=StreamHandler
+level=DEBUG
+formatter=simpleFormatter
+args=(sys.stdout,)
+
+[handler_fileHandler]
+class=FileHandler
+level=DEBUG
+formatter=simpleFormatter
+args=('app.log', 'w')
+
 [formatter_simpleFormatter]
 format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
-The output is nearly identical to that of the non-config-file-based example:
+datefmt=
+```
 
-python simple_logging_config.py
-2005-03-19 15:38:55,977 - simpleExample - DEBUG - debug message
-2005-03-19 15:38:55,979 - simpleExample - INFO - info message
-2005-03-19 15:38:56,054 - simpleExample - WARNING - warn message
-2005-03-19 15:38:56,055 - simpleExample - ERROR - error message
-2005-03-19 15:38:56,130 - simpleExample - CRITICAL - critical message
-You can see that the config file approach has a few advantages over the Python code approach, mainly separation of configuration and code and the ability of noncoders to easily modify the logging properties.
+구성에 사전을 사용할 수도 있습니다:
 
-Warning The fileConfig() function takes a default parameter, disable_existing_loggers, which defaults to True for reasons of backward compatibility. This may or may not be what you want, since it will cause any non-root loggers existing before the fileConfig() call to be disabled unless they (or an ancestor) are explicitly named in the configuration. Please refer to the reference documentation for more information, and specify False for this parameter if you wish.
-The dictionary passed to dictConfig() can also specify a Boolean value with key disable_existing_loggers, which if not specified explicitly in the dictionary also defaults to being interpreted as True. This leads to the logger-disabling behaviour described above, which may not be what you want - in which case, provide the key explicitly with a value of False.
-
-Note that the class names referenced in config files need to be either relative to the logging module, or absolute values which can be resolved using normal import mechanisms. Thus, you could use either WatchedFileHandler (relative to the logging module) or mypackage.mymodule.MyHandler (for a class defined in package mypackage and module mymodule, where mypackage is available on the Python import path).
-
-In Python 3.2, a new means of configuring logging has been introduced, using dictionaries to hold configuration information. This provides a superset of the functionality of the config-file-based approach outlined above, and is the recommended configuration method for new applications and deployments. Because a Python dictionary is used to hold configuration information, and since you can populate that dictionary using different means, you have more options for configuration. For example, you can use a configuration file in JSON format, or, if you have access to YAML processing functionality, a file in YAML format, to populate the configuration dictionary. Or, of course, you can construct the dictionary in Python code, receive it in pickled form over a socket, or use whatever approach makes sense for your application.
-
-Here’s an example of the same configuration as above, in YAML format for the new dictionary-based approach:
-
-version: 1
-formatters:
-  simple:
-    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-handlers:
-  console:
-    class: logging.StreamHandler
-    level: DEBUG
-    formatter: simple
-    stream: ext://sys.stdout
-loggers:
-  simpleExample:
-    level: DEBUG
-    handlers: [console]
-    propagate: no
-root:
-  level: DEBUG
-  handlers: [console]
-For more information about logging using a dictionary, see Configuration functions.
-
-What happens if no configuration is provided
-If no logging configuration is provided, it is possible to have a situation where a logging event needs to be output, but no handlers can be found to output the event.
-
-The event is output using a ‘handler of last resort’, stored in lastResort. This internal handler is not associated with any logger, and acts like a StreamHandler which writes the event description message to the current value of sys.stderr (therefore respecting any redirections which may be in effect). No formatting is done on the message - just the bare event description message is printed. The handler’s level is set to WARNING, so all events at this and greater severities will be output.
-
-Changed in version 3.2: For versions of Python prior to 3.2, the behaviour is as follows:
-
-If raiseExceptions is False (production mode), the event is silently dropped.
-
-If raiseExceptions is True (development mode), a message ‘No handlers could be found for logger X.Y.Z’ is printed once.
-
-To obtain the pre-3.2 behaviour, lastResort can be set to None.
-
-Configuring Logging for a Library
-When developing a library which uses logging, you should take care to document how the library uses logging - for example, the names of loggers used. Some consideration also needs to be given to its logging configuration. If the using application does not use logging, and library code makes logging calls, then (as described in the previous section) events of severity WARNING and greater will be printed to sys.stderr. This is regarded as the best default behaviour.
-
-If for some reason you don’t want these messages printed in the absence of any logging configuration, you can attach a do-nothing handler to the top-level logger for your library. This avoids the message being printed, since a handler will always be found for the library’s events: it just doesn’t produce any output. If the library user configures logging for application use, presumably that configuration will add some handlers, and if levels are suitably configured then logging calls made in library code will send output to those handlers, as normal.
-
-A do-nothing handler is included in the logging package: NullHandler (since Python 3.1). An instance of this handler could be added to the top-level logger of the logging namespace used by the library (if you want to prevent your library’s logged events being output to sys.stderr in the absence of logging configuration). If all logging by a library foo is done using loggers with names matching ‘foo.x’, ‘foo.x.y’, etc. then the code:
-
+```python
 import logging
-logging.getLogger('foo').addHandler(logging.NullHandler())
-should have the desired effect. If an organisation produces a number of libraries, then the logger name specified can be ‘orgname.foo’ rather than just ‘foo’.
+import logging.config
+
+config_dict = {
+    'version': 1,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'INFO',
+            'formatter': 'standard',
+            'stream': 'ext://sys.stdout'
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'level': 'DEBUG',
+            'formatter': 'standard',
+            'filename': 'app.log',
+            'mode': 'w'
+        }
+    },
+    'loggers': {
+        '': {  # 루트 로거
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True
+        }
+    }
+}
 
-Note It is strongly advised that you do not log to the root logger in your library. Instead, use a logger with a unique and easily identifiable name, such as the __name__ for your library’s top-level package or module. Logging to the root logger will make it difficult or impossible for the application developer to configure the logging verbosity or handlers of your library as they wish.
-Note It is strongly advised that you do not add any handlers other than NullHandler to your library’s loggers. This is because the configuration of handlers is the prerogative of the application developer who uses your library. The application developer knows their target audience and what handlers are most appropriate for their application: if you add handlers ‘under the hood’, you might well interfere with their ability to carry out unit tests and deliver logs which suit their requirements.
-Logging Levels
-The numeric values of logging levels are given in the following table. These are primarily of interest if you want to define your own levels, and need them to have specific values relative to the predefined levels. If you define a level with the same numeric value, it overwrites the predefined value; the predefined name is lost.
+logging.config.dictConfig(config_dict)
+logger = logging.getLogger()
+logger.info('사전을 사용하여 로깅 구성됨')
+```
 
-Level
+## Capturing Stack Traces
 
-Numeric value
+The logging module can automatically include stack trace information when logging exceptions:
 
-CRITICAL
+```python
+try:
+    # Some code that might raise an exception
+    x = 1 / 0
+except Exception as e:
+    # The exc_info=True parameter captures the stack trace
+    logging.error("An error occurred", exc_info=True)
 
-50
+# Or more simply
+try:
+    x = 1 / 0
+except Exception:
+    logging.exception("An error occurred")  # This automatically adds exc_info=True
+```
 
-ERROR
+## 스택 트레이스 캡처
 
-40
+로깅 모듈은 예외를 로깅할 때 자동으로 스택 트레이스 정보를 포함할 수 있습니다:
 
-WARNING
+```python
+try:
+    # 예외를 발생시킬 수 있는 코드
+    x = 1 / 0
+except Exception as e:
+    # exc_info=True 매개변수는 스택 트레이스를 캡처합니다
+    logging.error("오류가 발생했습니다", exc_info=True)
 
-30
+# 또는 더 간단하게
+try:
+    x = 1 / 0
+except Exception:
+    logging.exception("오류가 발생했습니다")  # 이것은 자동으로 exc_info=True를 추가합니다
+```
 
-INFO
+## Best Practices
 
-20
+Here are some best practices for using the logging module effectively:
 
-DEBUG
+1. **Use the appropriate log level**: Reserve DEBUG for detailed diagnostic information, INFO for general information, WARNING for unexpected events, ERROR for errors that prevent normal function, and CRITICAL for very severe errors.
 
-10
+2. **Use named loggers**: Create a logger for each module or component of your application. This provides better control and organization of logs.
 
-NOTSET
+3. **Configure logging early**: Configure logging at the start of your application, before any loggers are created.
 
-0
+4. **Use structured logging**: Consider using a structured logging format like JSON for complex applications, which makes logs easier to parse and analyze.
 
-Levels can also be associated with loggers, being set either by the developer or through loading a saved logging configuration. When a logging method is called on a logger, the logger compares its own level with the level associated with the method call. If the logger’s level is higher than the method call’s, no logging message is actually generated. This is the basic mechanism controlling the verbosity of logging output.
+5. **Use context information**: Include context that will help in debugging, like request IDs in a web application.
 
-Logging messages are encoded as instances of the LogRecord class. When a logger decides to actually log an event, a LogRecord instance is created from the logging message.
+6. **Don't log sensitive information**: Be cautious not to log sensitive data like passwords, credit card numbers, etc.
 
-Logging messages are subjected to a dispatch mechanism through the use of handlers, which are instances of subclasses of the Handler class. Handlers are responsible for ensuring that a logged message (in the form of a LogRecord) ends up in a particular location (or set of locations) which is useful for the target audience for that message (such as end users, support desk staff, system administrators, developers). Handlers are passed LogRecord instances intended for particular destinations. Each logger can have zero, one or more handlers associated with it (via the addHandler() method of Logger). In addition to any handlers directly associated with a logger, all handlers associated with all ancestors of the logger are called to dispatch the message (unless the propagate flag for a logger is set to a false value, at which point the passing to ancestor handlers stops).
+7. **Handle logging exceptions**: Make sure your application handles exceptions that might be raised by the logging system.
 
-Just as for loggers, handlers can have levels associated with them. A handler’s level acts as a filter in the same way as a logger’s level does. If a handler decides to actually dispatch an event, the emit() method is used to send the message to its destination. Most user-defined subclasses of Handler will need to override this emit().
+## 모범 사례
 
-Custom Levels
-Defining your own levels is possible, but should not be necessary, as the existing levels have been chosen on the basis of practical experience. However, if you are convinced that you need custom levels, great care should be exercised when doing this, and it is possibly a very bad idea to define custom levels if you are developing a library. That’s because if multiple library authors all define their own custom levels, there is a chance that the logging output from such multiple libraries used together will be difficult for the using developer to control and/or interpret, because a given numeric value might mean different things for different libraries.
+다음은 로깅 모듈을 효과적으로 사용하기 위한 몇 가지 모범 사례입니다:
 
-Useful Handlers
-In addition to the base Handler class, many useful subclasses are provided:
+1. **적절한 로그 레벨 사용**: DEBUG는 자세한 진단 정보용, INFO는 일반 정보용, WARNING은 예상치 못한 이벤트용, ERROR는 정상 기능을 방해하는 오류용, CRITICAL은 매우 심각한 오류용으로 예약하세요.
 
-StreamHandler instances send messages to streams (file-like objects).
+2. **명명된 로거 사용**: 애플리케이션의 각 모듈이나 구성 요소에 대한 로거를 만드세요. 이는 로그의 더 나은 제어와 구성을 제공합니다.
 
-FileHandler instances send messages to disk files.
+3. **로깅 조기 구성**: 로거가 생성되기 전에 애플리케이션 시작 시 로깅을 구성하세요.
 
-BaseRotatingHandler is the base class for handlers that rotate log files at a certain point. It is not meant to be instantiated directly. Instead, use RotatingFileHandler or TimedRotatingFileHandler.
+4. **구조화된 로깅 사용**: 복잡한 애플리케이션의 경우 JSON과 같은 구조화된 로깅 형식을 사용하는 것을 고려하세요. 이는 로그를 파싱하고 분석하기 쉽게 만듭니다.
 
-RotatingFileHandler instances send messages to disk files, with support for maximum log file sizes and log file rotation.
+5. **컨텍스트 정보 사용**: 웹 애플리케이션의 요청 ID와 같이 디버깅에 도움이 될 컨텍스트를 포함하세요.
 
-TimedRotatingFileHandler instances send messages to disk files, rotating the log file at certain timed intervals.
+6. **민감한 정보 로깅 금지**: 비밀번호, 신용 카드 번호 등과 같은 민감한 데이터를 로깅하지 않도록 주의하세요.
 
-SocketHandler instances send messages to TCP/IP sockets. Since 3.4, Unix domain sockets are also supported.
+7. **로깅 예외 처리**: 애플리케이션이 로깅 시스템에 의해 발생할 수 있는 예외를 처리하도록 하세요.
 
-DatagramHandler instances send messages to UDP sockets. Since 3.4, Unix domain sockets are also supported.
+## Example: Logging in a Flask Application
 
-SMTPHandler instances send messages to a designated email address.
+Here's an example of configuring logging in a Flask web application:
 
-SysLogHandler instances send messages to a Unix syslog daemon, possibly on a remote machine.
+```python
+import logging
+from logging.handlers import RotatingFileHandler
+import os
+from flask import Flask, request
 
-NTEventLogHandler instances send messages to a Windows NT/2000/XP event log.
+app = Flask(__name__)
 
-MemoryHandler instances send messages to a buffer in memory, which is flushed whenever specific criteria are met.
+# Configure logging
+if not os.path.exists('logs'):
+    os.mkdir('logs')
 
-HTTPHandler instances send messages to an HTTP server using either GET or POST semantics.
+file_handler = RotatingFileHandler('logs/app.log', maxBytes=10240, backupCount=10)
+file_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+))
+file_handler.setLevel(logging.INFO)
+app.logger.addHandler(file_handler)
 
-WatchedFileHandler instances watch the file they are logging to. If the file changes, it is closed and reopened using the file name. This handler is only useful on Unix-like systems; Windows does not support the underlying mechanism used.
+app.logger.setLevel(logging.INFO)
+app.logger.info('App startup')
 
-QueueHandler instances send messages to a queue, such as those implemented in the queue or multiprocessing modules.
+@app.route('/')
+def index():
+    app.logger.info('Index page requested')
+    return "Hello, World!"
 
-NullHandler instances do nothing with error messages. They are used by library developers who want to use logging, but want to avoid the ‘No handlers could be found for logger XXX’ message which can be displayed if the library user has not configured logging. See Configuring Logging for a Library for more information.
+@app.route('/error')
+def error():
+    app.logger.error('Error route triggered')
+    return "Error page", 500
 
-Added in version 3.1: The NullHandler class.
+@app.before_request
+def log_request_info():
+    app.logger.info('Request: %s %s', request.method, request.path)
 
-Added in version 3.2: The QueueHandler class.
+if __name__ == '__main__':
+    app.run(debug=True)
+```
 
-The NullHandler, StreamHandler and FileHandler classes are defined in the core logging package. The other handlers are defined in a sub-module, logging.handlers. (There is also another sub-module, logging.config, for configuration functionality.)
+## 예시: Flask 애플리케이션에서의 로깅
 
-Logged messages are formatted for presentation through instances of the Formatter class. They are initialized with a format string suitable for use with the % operator and a dictionary.
+다음은 Flask 웹 애플리케이션에서 로깅을 구성하는 예입니다:
 
-For formatting multiple messages in a batch, instances of BufferingFormatter can be used. In addition to the format string (which is applied to each message in the batch), there is provision for header and trailer format strings.
+```python
+import logging
+from logging.handlers import RotatingFileHandler
+import os
+from flask import Flask, request
 
-When filtering based on logger level and/or handler level is not enough, instances of Filter can be added to both Logger and Handler instances (through their addFilter() method). Before deciding to process a message further, both loggers and handlers consult all their filters for permission. If any filter returns a false value, the message is not processed further.
+app = Flask(__name__)
 
-The basic Filter functionality allows filtering by specific logger name. If this feature is used, messages sent to the named logger and its children are allowed through the filter, and all others dropped.
+# 로깅 구성
+if not os.path.exists('logs'):
+    os.mkdir('logs')
 
-Exceptions raised during logging
-The logging package is designed to swallow exceptions which occur while logging in production. This is so that errors which occur while handling logging events - such as logging misconfiguration, network or other similar errors - do not cause the application using logging to terminate prematurely.
+file_handler = RotatingFileHandler('logs/app.log', maxBytes=10240, backupCount=10)
+file_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+))
+file_handler.setLevel(logging.INFO)
+app.logger.addHandler(file_handler)
 
-SystemExit and KeyboardInterrupt exceptions are never swallowed. Other exceptions which occur during the emit() method of a Handler subclass are passed to its handleError() method.
+app.logger.setLevel(logging.INFO)
+app.logger.info('앱 시작')
 
-The default implementation of handleError() in Handler checks to see if a module-level variable, raiseExceptions, is set. If set, a traceback is printed to sys.stderr. If not set, the exception is swallowed.
+@app.route('/')
+def index():
+    app.logger.info('인덱스 페이지 요청됨')
+    return "Hello, World!"
 
-Note The default value of raiseExceptions is True. This is because during development, you typically want to be notified of any exceptions that occur. It’s advised that you set raiseExceptions to False for production usage.
-Using arbitrary objects as messages
-In the preceding sections and examples, it has been assumed that the message passed when logging the event is a string. However, this is not the only possibility. You can pass an arbitrary object as a message, and its __str__() method will be called when the logging system needs to convert it to a string representation. In fact, if you want to, you can avoid computing a string representation altogether - for example, the SocketHandler emits an event by pickling it and sending it over the wire.
+@app.route('/error')
+def error():
+    app.logger.error('오류 경로 트리거됨')
+    return "오류 페이지", 500
 
-Optimization
-Formatting of message arguments is deferred until it cannot be avoided. However, computing the arguments passed to the logging method can also be expensive, and you may want to avoid doing it if the logger will just throw away your event. To decide what to do, you can call the isEnabledFor() method which takes a level argument and returns true if the event would be created by the Logger for that level of call. You can write code like this:
+@app.before_request
+def log_request_info():
+    app.logger.info('요청: %s %s', request.method, request.path)
 
-if logger.isEnabledFor(logging.DEBUG):
-    logger.debug('Message with %s, %s', expensive_func1(),
-                                        expensive_func2())
-so that if the logger’s threshold is set above DEBUG, the calls to expensive_func1 and expensive_func2 are never made.
+if __name__ == '__main__':
+    app.run(debug=True)
+```
 
-Note In some cases, isEnabledFor() can itself be more expensive than you’d like (e.g. for deeply nested loggers where an explicit level is only set high up in the logger hierarchy). In such cases (or if you want to avoid calling a method in tight loops), you can cache the result of a call to isEnabledFor() in a local or instance variable, and use that instead of calling the method each time. Such a cached value would only need to be recomputed when the logging configuration changes dynamically while the application is running (which is not all that common).
-There are other optimizations which can be made for specific applications which need more precise control over what logging information is collected. Here’s a list of things you can do to avoid processing during logging which you don’t need:
+## Conclusion
 
-What you don’t want to collect
+Python's logging module provides a flexible and powerful way to record messages and events in your applications. By using the appropriate levels, handlers, and formatters, you can create a robust logging system that helps with debugging, monitoring, and troubleshooting your code.
 
-How to avoid collecting it
+Remember that proper logging is an essential part of professional software development, especially for applications that run in production environments. Invest time in setting up a good logging infrastructure from the beginning of your project, and you'll save countless hours when trying to diagnose issues later.
 
-Information about where calls were made from.
+## 결론
 
-Set logging._srcfile to None. This avoids calling sys._getframe(), which may help to speed up your code in environments like PyPy (which can’t speed up code that uses sys._getframe()).
+Python의 로깅 모듈은 애플리케이션에서 메시지와 이벤트를 기록하는 유연하고 강력한 방법을 제공합니다. 적절한 레벨, 핸들러, 포맷터를 사용함으로써 코드의 디버깅, 모니터링, 문제 해결에 도움이 되는 견고한 로깅 시스템을 만들 수 있습니다.
 
-Threading information.
-
-Set logging.logThreads to False.
-
-Current process ID (os.getpid())
-
-Set logging.logProcesses to False.
-
-Current process name when using multiprocessing to manage multiple processes.
-
-Set logging.logMultiprocessing to False.
-
-Current asyncio.Task name when using asyncio.
-
-Set logging.logAsyncioTasks to False.
-
-Also note that the core logging module only includes the basic handlers. If you don’t import logging.handlers and logging.config, they won’t take up any memory.
-
-Other resources
-See also
-Module logging
-API reference for the logging module.
-
-Module logging.config
-Configuration API for the logging module.
-
-Module logging.handlers
-Useful handlers included with the logging module.
-
-A logging cookbook
+적절한 로깅은 특히 프로덕션 환경에서 실행되는 애플리케이션에서 전문적인 소프트웨어 개발의 필수적인 부분임을 기억하세요. 프로젝트 시작부터 좋은 로깅 인프라를 구축하는 데 시간을 투자하면 나중에 문제를 진단할 때 수많은 시간을 절약할 수 있습니다.
 
